@@ -1,0 +1,97 @@
+-- =======================================
+-- 1. Bảng người dùng (khách hàng / nhân viên)
+-- =======================================
+CREATE TABLE users (
+   user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   full_name VARCHAR(100) NOT NULL,
+   email VARCHAR(100) UNIQUE,
+   phone VARCHAR(20),
+   password VARCHAR(255) NOT NULL,
+   address TEXT,
+   role ENUM('CUSTOMER', 'EMPLOYEE', 'ADMIN') DEFAULT 'CUSTOMER',
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- =======================================
+-- 2. Bảng danh mục sản phẩm
+-- =======================================
+CREATE TABLE categories (
+   category_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100) NOT NULL,
+   description TEXT
+);
+-- =======================================
+-- 3. Bảng sản phẩm
+-- =======================================
+CREATE TABLE products (
+   product_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   category_id BIGINT,
+   name VARCHAR(150) NOT NULL,
+   description TEXT,
+   price DECIMAL(15,2) NOT NULL,
+   stock INT DEFAULT 0,
+   image_url VARCHAR(255),
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL
+);
+-- =======================================
+-- 4. Bảng hóa đơn (FE gửi xuống BE lưu trực tiếp)
+-- =======================================
+CREATE TABLE invoices (
+   invoice_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   user_id BIGINT,
+   customer_name VARCHAR(100),
+   total_amount DECIMAL(15,2) NOT NULL,
+   status ENUM('PENDING', 'PAID', 'CANCELLED') DEFAULT 'PENDING',
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+-- =======================================
+-- 5. Bảng chi tiết hóa đơn
+-- =======================================
+CREATE TABLE invoice_items (
+   item_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   invoice_id BIGINT NOT NULL,
+   product_id BIGINT NOT NULL,
+   quantity INT NOT NULL DEFAULT 1,
+   price DECIMAL(15,2) NOT NULL,
+   FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE,
+   FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
+);
+-- =======================================
+-- 6. Bảng thanh toán (QR)
+-- =======================================
+CREATE TABLE payments (
+   payment_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   invoice_id BIGINT NOT NULL,
+   amount DECIMAL(15,2) NOT NULL,
+   payment_method ENUM('QR_CODE', 'CASH', 'CARD') DEFAULT 'QR_CODE',
+   qr_code_url VARCHAR(255),
+   payment_status ENUM('UNPAID', 'PAID', 'FAILED') DEFAULT 'UNPAID',
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE
+);
+-- =======================================
+-- 7. Bảng khuyến mãi (tùy chọn)
+-- =======================================
+CREATE TABLE promotions (
+   promo_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   code VARCHAR(50) UNIQUE,
+   discount_percent DECIMAL(5,2),
+   start_date DATE,
+   end_date DATE,
+   status ENUM('ACTIVE', 'EXPIRED') DEFAULT 'ACTIVE'
+);
+-- =======================================
+-- 8. Bảng log xuất nhập kho
+-- =======================================
+CREATE TABLE inventory_logs (
+   log_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+   product_id BIGINT NOT NULL,
+   user_id BIGINT,
+   action_type ENUM('IMPORT', 'EXPORT') NOT NULL,
+   quantity INT NOT NULL,
+   note TEXT,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
