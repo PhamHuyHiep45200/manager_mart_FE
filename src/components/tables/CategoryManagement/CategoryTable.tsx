@@ -9,88 +9,14 @@ import {
 import Badge from "../../ui/badge/Badge";
 import CategoryFormPopup from "./CategoryFormPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
-import Pagination from "../../common/Pagination";
-import { Category, CategoryFormData } from "./types";
-
-// Mock data cho danh mục
-const initialCategoryData: Category[] = [
-  {
-    category_id: 1,
-    name: "Thực phẩm tươi sống",
-    description: "Các loại thực phẩm tươi sống như rau củ, thịt cá, trái cây",
-    created_at: "2024-01-15T08:30:00Z"
-  },
-  {
-    category_id: 2,
-    name: "Đồ uống",
-    description: "Các loại đồ uống bao gồm nước ngọt, nước suối, trà, cà phê",
-    created_at: "2024-01-20T09:15:00Z"
-  },
-  {
-    category_id: 3,
-    name: "Bánh kẹo",
-    description: "Các loại bánh kẹo, snack, đồ ngọt và món tráng miệng",
-    created_at: "2024-02-01T10:00:00Z"
-  },
-  {
-    category_id: 4,
-    name: "Sản phẩm từ sữa",
-    description: "Sữa tươi, sữa chua, phô mai và các sản phẩm từ sữa khác",
-    created_at: "2024-02-10T11:30:00Z"
-  },
-  {
-    category_id: 5,
-    name: "Đồ gia dụng",
-    description: "Các sản phẩm gia dụng như dụng cụ nhà bếp, đồ dùng cá nhân",
-    created_at: "2024-02-15T14:45:00Z"
-  },
-  {
-    category_id: 6,
-    name: "Mỹ phẩm",
-    description: "Các sản phẩm chăm sóc da, tóc và mỹ phẩm trang điểm",
-    created_at: "2024-03-01T16:20:00Z"
-  },
-  {
-    category_id: 7,
-    name: "Đồ chơi trẻ em",
-    description: "Các loại đồ chơi an toàn và phù hợp cho trẻ em",
-    created_at: "2024-03-10T09:30:00Z"
-  },
-  {
-    category_id: 8,
-    name: "Văn phòng phẩm",
-    description: "Bút, giấy, sổ tay và các dụng cụ văn phòng khác",
-    created_at: "2024-03-20T11:45:00Z"
-  },
-  {
-    category_id: 9,
-    name: "Thực phẩm đóng hộp",
-    description: "Các loại thực phẩm đã được đóng hộp và bảo quản",
-    created_at: "2024-04-01T14:15:00Z"
-  },
-  {
-    category_id: 10,
-    name: "Đồ điện tử",
-    description: "Các thiết bị điện tử nhỏ như sạc pin, tai nghe, cáp",
-    created_at: "2024-04-10T08:00:00Z"
-  },
-  {
-    category_id: 11,
-    name: "Thể thao",
-    description: "Dụng cụ thể thao, quần áo thể thao và phụ kiện",
-    created_at: "2024-04-20T10:30:00Z"
-  },
-  {
-    category_id: 12,
-    name: "Sách báo",
-    description: "Sách, tạp chí, báo và các ấn phẩm in khác",
-    created_at: "2024-05-01T13:20:00Z"
-  }
-];
+import { Category, CategoryFormData, CategoryWithUI } from "./types";
+import { useCategoryTree, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../../../hooks/useCategories';
+import { Category as APICategory } from '../../../services/categoryService';
 
 export default function CategoryTable() {
   // State management
-  const [categories, setCategories] = useState<Category[]>(initialCategoryData);
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -103,31 +29,58 @@ export default function CategoryTable() {
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  // React Query hooks
+  const { data: categoryTreeData, isLoading, error, refetch } = useCategoryTree();
+  const createCategoryMutation = useCreateCategory();
+  const updateCategoryMutation = useUpdateCategory();
+  const deleteCategoryMutation = useDeleteCategory();
+
+  // Convert API data to Category format with UI state
+  const categoriesWithUI: CategoryWithUI[] = useMemo(() => {
+    if (!categoryTreeData) return [];
+    
+    const convertCategory = (cat: APICategory, level: number = 0): CategoryWithUI => ({
+      category_id: cat.id || 0,
+      name: cat.name,
+      description: cat.description,
+      parent_id: cat.parentId,
+      created_at: new Date().toISOString(), // API không trả về created_at
+      children: cat.children?.map(child => convertCategory(child, level + 1)),
+      level,
+      isExpanded: expandedCategories.has(cat.id || 0),
+      isSelected: selectedParentId === cat.id
+    });
+
+    return categoryTreeData.map(cat => convertCategory(cat));
+  }, [categoryTreeData, expandedCategories, selectedParentId]);
+
+  // Flatten categories for display (parent và children)
+  const flattenedCategories = useMemo(() => {
+    const flatten = (categories: CategoryWithUI[]): CategoryWithUI[] => {
+      let result: CategoryWithUI[] = [];
+      
+      categories.forEach(category => {
+        result.push(category);
+        if (category.isExpanded && category.children) {
+          result = result.concat(flatten(category.children));
+        }
+      });
+      
+      return result;
+    };
+
+    return flatten(categoriesWithUI);
+  }, [categoriesWithUI]);
 
   // Filtered categories based on search
   const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) return categories;
+    if (!searchTerm.trim()) return flattenedCategories;
     
-    return categories.filter(category =>
+    return flattenedCategories.filter(category =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [categories, searchTerm]);
-
-  // Calculate pagination for filtered data
-  const totalItems = filteredCategories.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCategories = filteredCategories.slice(startIndex, endIndex);
-
-  // Reset to first page when search changes
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  }, [flattenedCategories, searchTerm]);
 
   // Function to format date
   const formatDate = (dateString: string) => {
@@ -138,10 +91,32 @@ export default function CategoryTable() {
     });
   };
 
-  // Handle add category
-  const handleAddCategory = () => {
+  // Handle expand/collapse category
+  const handleToggleExpand = (categoryId: number) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle add root category
+  const handleAddRootCategory = () => {
     setFormMode('add');
     setSelectedCategory(null);
+    setSelectedParentId(null);
+    setIsFormPopupOpen(true);
+  };
+
+  // Handle add child category
+  const handleAddChildCategory = (parentId: number) => {
+    setFormMode('add');
+    setSelectedCategory(null);
+    setSelectedParentId(parentId);
     setIsFormPopupOpen(true);
   };
 
@@ -153,23 +128,27 @@ export default function CategoryTable() {
   };
 
   // Handle form submit
-  const handleFormSubmit = (categoryData: CategoryFormData) => {
-    if (formMode === 'add') {
-      // Generate new ID for new category
-      const newId = Math.max(...categories.map(c => c.category_id)) + 1;
-      const newCategory: Category = {
-        ...categoryData,
-        category_id: newId,
-        created_at: new Date().toISOString()
-      };
-      setCategories(prev => [...prev, newCategory]);
-    } else {
-      // Update existing category
-      setCategories(prev => prev.map(cat => 
-        cat.category_id === selectedCategory?.category_id 
-          ? { ...cat, ...categoryData, updated_at: new Date().toISOString() }
-          : cat
-      ));
+  const handleFormSubmit = async (categoryData: CategoryFormData) => {
+    try {
+      if (formMode === 'add') {
+        const apiCategoryData: APICategory = {
+          name: categoryData.name,
+          description: categoryData.description,
+          parentId: selectedParentId || undefined
+        };
+        await createCategoryMutation.mutateAsync(apiCategoryData);
+      } else if (selectedCategory) {
+        const apiCategoryData: Partial<APICategory> & { id: number } = {
+          id: selectedCategory.category_id,
+          name: categoryData.name,
+          description: categoryData.description,
+          parentId: categoryData.parent_id
+        };
+        await updateCategoryMutation.mutateAsync(apiCategoryData);
+      }
+      setIsFormPopupOpen(false);
+    } catch (error) {
+      console.error('Error saving category:', error);
     }
   };
 
@@ -183,26 +162,46 @@ export default function CategoryTable() {
   };
 
   // Handle confirm delete
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (confirmAction) {
-      setCategories(prev => prev.filter(cat => cat.category_id !== confirmAction.category.category_id));
+      try {
+        await deleteCategoryMutation.mutateAsync(confirmAction.category.category_id);
+        setIsConfirmPopupOpen(false);
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
     }
-  };
-
-  // Pagination handlers
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
   };
 
   // Search handler
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-gray-600">Đang tải...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">Có lỗi xảy ra khi tải dữ liệu</div>
+        <button 
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -224,22 +223,22 @@ export default function CategoryTable() {
           />
         </div>
 
-        {/* Add Category Button */}
+        {/* Add Root Category Button */}
         <button
-          onClick={handleAddCategory}
+          onClick={handleAddRootCategory}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Thêm danh mục
+          Thêm danh mục gốc
         </button>
       </div>
 
       {/* Search Results Info */}
       {searchTerm && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Tìm thấy {totalItems} danh mục cho từ khóa "{searchTerm}"
+          Tìm thấy {filteredCategories.length} danh mục cho từ khóa "{searchTerm}"
         </div>
       )}
 
@@ -265,6 +264,12 @@ export default function CategoryTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
+                  Cấp độ
+                </TableCell>
+                <TableCell
+                  isHeader
+                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+                >
                   Mô tả
                 </TableCell>
                 <TableCell
@@ -284,9 +289,9 @@ export default function CategoryTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {currentCategories.length > 0 ? (
-                currentCategories.map((category) => (
-                  <TableRow key={category.category_id}>
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((category) => (
+                  <TableRow key={category.category_id} className={category.level && category.level > 0 ? 'bg-gray-50 dark:bg-gray-800/30' : ''}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
                         #{category.category_id}
@@ -294,17 +299,56 @@ export default function CategoryTable() {
                     </TableCell>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <div className="flex items-center gap-3">
+                        {/* Indentation cho child categories */}
+                        {category.level && category.level > 0 && (
+                          <div className="flex items-center gap-1" style={{ marginLeft: `${category.level * 20}px` }}>
+                            <div className="w-4 h-4 border-l-2 border-b-2 border-gray-300 dark:border-gray-600"></div>
+                          </div>
+                        )}
+                        
+                        {/* Expand/Collapse button cho parent categories */}
+                        {category.children && category.children.length > 0 && (
+                          <button
+                            onClick={() => handleToggleExpand(category.category_id)}
+                            className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <svg 
+                              className={`w-4 h-4 transition-transform ${category.isExpanded ? 'rotate-90' : ''}`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        )}
+                        
+                        {/* Category icon */}
                         <div className="w-10 h-10 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                           <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
                             {category.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
+                        
                         <div>
                           <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                             {category.name}
                           </span>
+                          {category.parent_id && (
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">
+                              Danh mục con
+                            </span>
+                          )}
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <Badge
+                        size="sm"
+                        color={category.level === 0 ? 'success' : 'info'}
+                      >
+                        {category.level === 0 ? 'Gốc' : `Cấp ${category.level}`}
+                      </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <div className="max-w-xs">
@@ -318,6 +362,19 @@ export default function CategoryTable() {
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <div className="flex items-center gap-2">
+                        {/* Add child button cho parent categories */}
+                        {category.level === 0 && (
+                          <button 
+                            onClick={() => handleAddChildCategory(category.category_id)}
+                            className="text-green-500 hover:text-green-600 transition-colors"
+                            title="Thêm danh mục con"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          </button>
+                        )}
+                        
                         <button 
                           onClick={() => handleEditCategory(category)}
                           className="text-primary hover:text-primary/80 transition-colors"
@@ -327,6 +384,7 @@ export default function CategoryTable() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
+                        
                         <button 
                           onClick={() => handleDeleteCategory(category)}
                           className="text-red-500 hover:text-red-600 transition-colors"
@@ -342,27 +400,19 @@ export default function CategoryTable() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <TableCell className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                     {searchTerm ? 'Không tìm thấy danh mục nào phù hợp' : 'Chưa có danh mục nào'}
                   </TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-        
-        {/* Pagination */}
-        {totalItems > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            showItemsPerPage={true}
-          />
-        )}
       </div>
 
       {/* Category Form Popup */}
@@ -372,6 +422,7 @@ export default function CategoryTable() {
         onSubmit={handleFormSubmit}
         category={selectedCategory}
         mode={formMode}
+        parentId={selectedParentId}
       />
 
       {/* Confirm Delete Popup */}

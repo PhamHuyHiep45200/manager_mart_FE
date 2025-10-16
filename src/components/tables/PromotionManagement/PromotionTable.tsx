@@ -11,122 +11,11 @@ import PromotionFormPopup from "./PromotionFormPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
 import Pagination from "../../common/Pagination";
 import { Promotion, PromotionFormData } from "./types";
-
-// Mock data cho mã giảm giá
-const initialPromotionData: Promotion[] = [
-  {
-    promo_id: 1,
-    code: "SALE20",
-    discount_percent: 20,
-    start_date: "2024-01-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-01-01T00:00:00Z"
-  },
-  {
-    promo_id: 2,
-    code: "WELCOME10",
-    discount_percent: 10,
-    start_date: "2024-01-15",
-    end_date: "2024-06-15",
-    status: "ACTIVE",
-    created_at: "2024-01-15T08:30:00Z"
-  },
-  {
-    promo_id: 3,
-    code: "SUMMER30",
-    discount_percent: 30,
-    start_date: "2024-06-01",
-    end_date: "2024-08-31",
-    status: "EXPIRED",
-    created_at: "2024-06-01T09:15:00Z"
-  },
-  {
-    promo_id: 4,
-    code: "NEWYEAR50",
-    discount_percent: 50,
-    start_date: "2024-01-01",
-    end_date: "2024-01-07",
-    status: "EXPIRED",
-    created_at: "2024-01-01T00:00:00Z"
-  },
-  {
-    promo_id: 5,
-    code: "VIP15",
-    discount_percent: 15,
-    start_date: "2024-03-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-03-01T10:00:00Z"
-  },
-  {
-    promo_id: 6,
-    code: "FLASH25",
-    discount_percent: 25,
-    start_date: "2024-11-01",
-    end_date: "2024-11-30",
-    status: "ACTIVE",
-    created_at: "2024-11-01T11:30:00Z"
-  },
-  {
-    promo_id: 7,
-    code: "BLACKFRIDAY40",
-    discount_percent: 40,
-    start_date: "2024-11-24",
-    end_date: "2024-11-26",
-    status: "EXPIRED",
-    created_at: "2024-11-24T00:00:00Z"
-  },
-  {
-    promo_id: 8,
-    code: "STUDENT12",
-    discount_percent: 12,
-    start_date: "2024-09-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-09-01T14:45:00Z"
-  },
-  {
-    promo_id: 9,
-    code: "BIRTHDAY20",
-    discount_percent: 20,
-    start_date: "2024-01-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-01-01T16:20:00Z"
-  },
-  {
-    promo_id: 10,
-    code: "FIRSTTIME15",
-    discount_percent: 15,
-    start_date: "2024-02-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-02-01T09:30:00Z"
-  },
-  {
-    promo_id: 11,
-    code: "LOYALTY10",
-    discount_percent: 10,
-    start_date: "2024-04-01",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-04-01T11:45:00Z"
-  },
-  {
-    promo_id: 12,
-    code: "HOLIDAY35",
-    discount_percent: 35,
-    start_date: "2024-12-20",
-    end_date: "2024-12-31",
-    status: "ACTIVE",
-    created_at: "2024-12-20T14:15:00Z"
-  }
-];
+import { usePromotions, useCreatePromotion } from '../../../hooks/usePromotions';
+import { Promotion as APIPromotion } from '../../../services/promotionService';
 
 export default function PromotionTable() {
   // State management
-  const [promotions, setPromotions] = useState<Promotion[]>(initialPromotionData);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -142,6 +31,25 @@ export default function PromotionTable() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // React Query hooks
+  const { data: promotionsData, isLoading, error, refetch } = usePromotions();
+  const createPromotionMutation = useCreatePromotion();
+
+  // Convert API data to Promotion format
+  const promotions: Promotion[] = useMemo(() => {
+    if (!promotionsData) return [];
+    
+    return promotionsData.map((promo: APIPromotion) => ({
+      promo_id: promo.id || 0,
+      code: promo.code,
+      discount_percent: promo.discountPercent,
+      start_date: promo.startDate,
+      end_date: promo.endDate,
+      status: promo.status as 'ACTIVE' | 'INACTIVE' | 'EXPIRED',
+      created_at: new Date().toISOString(), // API không trả về created_at
+    }));
+  }, [promotionsData]);
 
   // Filtered promotions based on search
   const filteredPromotions = useMemo(() => {
@@ -199,23 +107,24 @@ export default function PromotionTable() {
   };
 
   // Handle form submit
-  const handleFormSubmit = (promotionData: PromotionFormData) => {
-    if (formMode === 'add') {
-      // Generate new ID for new promotion
-      const newId = Math.max(...promotions.map(p => p.promo_id)) + 1;
-      const newPromotion: Promotion = {
-        ...promotionData,
-        promo_id: newId,
-        created_at: new Date().toISOString()
-      };
-      setPromotions(prev => [...prev, newPromotion]);
-    } else {
-      // Update existing promotion
-      setPromotions(prev => prev.map(promo => 
-        promo.promo_id === selectedPromotion?.promo_id 
-          ? { ...promo, ...promotionData, updated_at: new Date().toISOString() }
-          : promo
-      ));
+  const handleFormSubmit = async (promotionData: PromotionFormData) => {
+    try {
+      if (formMode === 'add') {
+        const apiPromotionData: APIPromotion = {
+          code: promotionData.code,
+          discountPercent: promotionData.discount_percent,
+          startDate: promotionData.start_date,
+          endDate: promotionData.end_date,
+          status: promotionData.status
+        };
+        await createPromotionMutation.mutateAsync(apiPromotionData);
+      } else {
+        // TODO: Implement update when API is available
+        console.log('Update functionality not implemented yet');
+      }
+      setIsFormPopupOpen(false);
+    } catch (error) {
+      console.error('Error saving promotion:', error);
     }
   };
 
@@ -228,11 +137,16 @@ export default function PromotionTable() {
     setIsConfirmPopupOpen(true);
   };
 
-  // Handle confirm delete
+  // Handle confirm delete (tạm thời disable vì API không hỗ trợ)
   const handleConfirmDelete = () => {
-    if (confirmAction) {
-      setPromotions(prev => prev.filter(promo => promo.promo_id !== confirmAction.promotion.promo_id));
-    }
+    // TODO: Implement delete API when available
+    console.log('Delete functionality not implemented yet');
+    setIsConfirmPopupOpen(false);
+  };
+
+  // Search handler
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   // Pagination handlers
@@ -245,10 +159,30 @@ export default function PromotionTable() {
     setCurrentPage(1);
   };
 
-  // Search handler
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-gray-600">Đang tải...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">Có lỗi xảy ra khi tải dữ liệu</div>
+        <button 
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -285,7 +219,7 @@ export default function PromotionTable() {
       {/* Search Results Info */}
       {searchTerm && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Tìm thấy {totalItems} mã giảm giá cho từ khóa "{searchTerm}"
+          Tìm thấy {filteredPromotions.length} mã giảm giá cho từ khóa "{searchTerm}"
         </div>
       )}
 
@@ -417,7 +351,7 @@ export default function PromotionTable() {
         </div>
         
         {/* Pagination */}
-        {totalItems > 0 && (
+        {filteredPromotions.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

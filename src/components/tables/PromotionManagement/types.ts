@@ -1,11 +1,11 @@
-// Interface cho Promotion dựa trên database schema
+// Interface cho Promotion dựa trên API schema
 export interface Promotion {
   promo_id: number;
   code: string;
   discount_percent: number;
   start_date: string;
   end_date: string;
-  status: 'ACTIVE' | 'EXPIRED';
+  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   created_at?: string;
   updated_at?: string;
 }
@@ -17,7 +17,7 @@ export interface PromotionFormData {
   discount_percent: number;
   start_date: string;
   end_date: string;
-  status: 'ACTIVE' | 'EXPIRED';
+  status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
   created_at?: string;
   updated_at?: string;
 }

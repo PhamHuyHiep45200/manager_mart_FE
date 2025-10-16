@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
@@ -12,9 +14,23 @@ import SupplierPage from "./pages/Supplier/Supplier";
 import PromotionPage from "./pages/Promotion/Promotion";
 import ProductPage from "./pages/Product/Product";
 
+// Tạo QueryClient instance cho web admin - luôn cần data mới nhất
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0, // Luôn coi data là stale để fetch mới
+      gcTime: 0, // Không cache data
+      retry: 1,
+      refetchOnWindowFocus: true, // Refetch khi focus lại window
+      refetchOnMount: true, // Refetch khi component mount
+      refetchOnReconnect: true, // Refetch khi reconnect
+    },
+  },
+});
+
 export default function App() {
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Router>
         <ScrollToTop />
         <Routes>
@@ -54,6 +70,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }

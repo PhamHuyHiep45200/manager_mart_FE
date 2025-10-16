@@ -11,134 +11,14 @@ import EmployeeFormPopup from "./EmployeeFormPopup";
 import ConfirmPopup from "./ConfirmPopup";
 import Pagination from "../../common/Pagination";
 import { Employee, EmployeeFormData } from "./types";
-
-// Mock data cho nhân viên (tăng số lượng để demo phân trang)
-const initialEmployeeData: Employee[] = [
-  {
-    user_id: 1,
-    full_name: "Nguyễn Văn An",
-    email: "nguyen.van.an@minimart.com",
-    phone: "0123456789",
-    address: "123 Đường ABC, Quận 1, TP.HCM",
-    role: "ADMIN",
-    created_at: "2024-01-15T08:30:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 2,
-    full_name: "Trần Thị Bình",
-    email: "tran.thi.binh@minimart.com",
-    phone: "0987654321",
-    address: "456 Đường XYZ, Quận 2, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-02-20T09:15:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 3,
-    full_name: "Lê Văn Cường",
-    email: "le.van.cuong@minimart.com",
-    phone: "0369258147",
-    address: "789 Đường DEF, Quận 3, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-03-10T10:00:00Z",
-    is_locked: true
-  },
-  {
-    user_id: 4,
-    full_name: "Phạm Thị Dung",
-    email: "pham.thi.dung@minimart.com",
-    phone: "0741852963",
-    address: "321 Đường GHI, Quận 4, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-04-05T11:30:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 5,
-    full_name: "Hoàng Văn Em",
-    email: "hoang.van.em@minimart.com",
-    phone: "0527419638",
-    address: "654 Đường JKL, Quận 5, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-05-12T14:45:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 6,
-    full_name: "Võ Thị Phương",
-    email: "vo.thi.phuong@minimart.com",
-    phone: "0963258741",
-    address: "987 Đường MNO, Quận 6, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-06-08T16:20:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 7,
-    full_name: "Đặng Văn Quang",
-    email: "dang.van.quang@minimart.com",
-    phone: "0852741963",
-    address: "147 Đường PQR, Quận 7, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-07-15T09:30:00Z",
-    is_locked: true
-  },
-  {
-    user_id: 8,
-    full_name: "Bùi Thị Lan",
-    email: "bui.thi.lan@minimart.com",
-    phone: "0741852963",
-    address: "258 Đường STU, Quận 8, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-08-22T11:45:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 9,
-    full_name: "Phan Văn Minh",
-    email: "phan.van.minh@minimart.com",
-    phone: "0369258147",
-    address: "369 Đường VWX, Quận 9, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-09-10T14:15:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 10,
-    full_name: "Ngô Thị Hoa",
-    email: "ngo.thi.hoa@minimart.com",
-    phone: "0527419638",
-    address: "741 Đường YZA, Quận 10, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-10-05T08:00:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 11,
-    full_name: "Trịnh Văn Tuấn",
-    email: "trinh.van.tuan@minimart.com",
-    phone: "0963258741",
-    address: "852 Đường BCD, Quận 11, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-11-12T10:30:00Z",
-    is_locked: false
-  },
-  {
-    user_id: 12,
-    full_name: "Lý Thị Mai",
-    email: "ly.thi.mai@minimart.com",
-    phone: "0741852963",
-    address: "963 Đường EFG, Quận 12, TP.HCM",
-    role: "EMPLOYEE",
-    created_at: "2024-12-01T13:20:00Z",
-    is_locked: true
-  }
-];
+import { useUsersByRole, useCreateUser, useUpdateUser } from '../../../hooks/useUsers';
+import { User } from '../../../services/userService';
 
 export default function EmployeeTable() {
   // State management
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployeeData);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
@@ -148,16 +28,33 @@ export default function EmployeeTable() {
     employee: Employee;
   } | null>(null);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  // React Query hooks
+  const searchRequest = {
+    page: currentPage - 1, // API sử dụng 0-based pagination
+    size: itemsPerPage,
+    sorts: [],
+    filters: searchTerm ? [{ field: 'fullName', operator: 'contains', value: searchTerm }] : []
+  };
 
-  // Calculate pagination
-  const totalItems = employees.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentEmployees = employees.slice(startIndex, endIndex);
+  const { data: employeesData, isLoading, error, refetch } = useUsersByRole('STAFF', searchRequest);
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+
+  // Convert API data to Employee format
+  const employees: Employee[] = employeesData?.content?.map((user: User) => ({
+    user_id: user.id || 0,
+    full_name: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    address: user.address,
+          role: user.role === 'STAFF' ? 'EMPLOYEE' : 'ADMIN',
+    created_at: new Date().toISOString(), // API không trả về created_at, sử dụng thời gian hiện tại
+    is_locked: false // API không có field này, mặc định false
+  })) || [];
+
+  // Pagination data
+  const totalItems = employeesData?.totalElements || 0;
+  const totalPages = employeesData?.totalPages || 0;
 
   // Function to format date
   const formatDate = (dateString: string) => {
@@ -193,24 +90,32 @@ export default function EmployeeTable() {
   };
 
   // Handle form submit
-  const handleFormSubmit = (employeeData: EmployeeFormData) => {
-    if (formMode === 'add') {
-      // Generate new ID for new employee
-      const newId = Math.max(...employees.map(e => e.user_id)) + 1;
-      const newEmployee: Employee = {
-        ...employeeData,
-        user_id: newId,
-        created_at: new Date().toISOString(),
-        is_locked: false
-      };
-      setEmployees(prev => [...prev, newEmployee]);
-    } else {
-      // Update existing employee
-      setEmployees(prev => prev.map(emp => 
-        emp.user_id === selectedEmployee?.user_id 
-          ? { ...emp, ...employeeData }
-          : emp
-      ));
+  const handleFormSubmit = async (employeeData: EmployeeFormData) => {
+    try {
+      if (formMode === 'add') {
+        const userData: User = {
+          fullName: employeeData.full_name,
+          email: employeeData.email,
+          phone: employeeData.phone,
+          address: employeeData.address,
+          role: employeeData.role === 'EMPLOYEE' ? 'STAFF' : 'ADMIN',
+          password: employeeData.password || 'defaultPassword123'
+        };
+        await createUserMutation.mutateAsync(userData);
+      } else if (selectedEmployee) {
+        const userData: Partial<User> & { id: number } = {
+          id: selectedEmployee.user_id,
+          fullName: employeeData.full_name,
+          email: employeeData.email,
+          phone: employeeData.phone,
+          address: employeeData.address,
+          role: employeeData.role === 'EMPLOYEE' ? 'STAFF' : 'ADMIN'
+        };
+        await updateUserMutation.mutateAsync(userData);
+      }
+      setIsFormPopupOpen(false);
+    } catch (error) {
+      console.error('Error saving employee:', error);
     }
   };
 
@@ -223,15 +128,17 @@ export default function EmployeeTable() {
     setIsConfirmPopupOpen(true);
   };
 
-  // Handle confirm lock/unlock
+  // Handle confirm lock/unlock (tạm thời disable vì API không hỗ trợ)
   const handleConfirmLockToggle = () => {
-    if (confirmAction) {
-      setEmployees(prev => prev.map(emp => 
-        emp.user_id === confirmAction.employee.user_id 
-          ? { ...emp, is_locked: !emp.is_locked }
-          : emp
-      ));
-    }
+    // TODO: Implement lock/unlock API when available
+    console.log('Lock/unlock functionality not implemented yet');
+    setIsConfirmPopupOpen(false);
+  };
+
+  // Handle search
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   // Pagination handlers
@@ -244,10 +151,52 @@ export default function EmployeeTable() {
     setCurrentPage(1); // Reset to first page when changing items per page
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-gray-600">Đang tải...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">Có lỗi xảy ra khi tải dữ liệu</div>
+        <button 
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Add Employee Button */}
-      <div className="mb-4 flex justify-end">
+      {/* Search and Add Employee */}
+      <div className="mb-4 flex justify-between items-center">
+        {/* Search Input */}
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Tìm kiếm nhân viên..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Add Employee Button */}
         <button
           onClick={handleAddEmployee}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
@@ -312,7 +261,7 @@ export default function EmployeeTable() {
 
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {currentEmployees.map((employee) => (
+            {employees.map((employee) => (
               <TableRow key={employee.user_id} className={employee.is_locked ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50' : ''}>
                 <TableCell className="px-5 py-4 sm:px-6 text-start">
                   <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">

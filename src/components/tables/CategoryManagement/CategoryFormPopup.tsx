@@ -8,6 +8,7 @@ interface CategoryFormPopupProps {
   onSubmit: (category: CategoryFormData) => void;
   category?: CategoryFormData | null;
   mode: 'add' | 'edit';
+  parentId?: number | null; // ID của category cha
 }
 
 export default function CategoryFormPopup({ 
@@ -15,7 +16,8 @@ export default function CategoryFormPopup({
   onClose, 
   onSubmit, 
   category, 
-  mode 
+  mode,
+  parentId 
 }: CategoryFormPopupProps) {
   const {
     control,
@@ -25,7 +27,8 @@ export default function CategoryFormPopup({
   } = useForm<CategoryFormData>({
     defaultValues: {
       name: '',
-      description: ''
+      description: '',
+      parent_id: undefined
     },
     mode: 'onChange'
   });
@@ -37,16 +40,18 @@ export default function CategoryFormPopup({
         reset({
           category_id: category.category_id,
           name: category.name,
-          description: category.description
+          description: category.description,
+          parent_id: category.parent_id
         });
       } else {
         reset({
           name: '',
-          description: ''
+          description: '',
+          parent_id: parentId || undefined
         });
       }
     }
-  }, [isOpen, category, mode, reset]);
+  }, [isOpen, category, mode, reset, parentId]);
 
   // Validation rules
   const validationRules = {

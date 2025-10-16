@@ -8,6 +8,8 @@ import {
 import Badge from "../../ui/badge/Badge";
 import Pagination from "../../common/Pagination";
 import { useState } from 'react';
+import { useUsersByRole } from '../../../hooks/useUsers';
+import { User } from '../../../services/userService';
 
 // Interface cho khách hàng dựa trên database schema
 interface Customer {
@@ -22,154 +24,38 @@ interface Customer {
   total_spent?: number;
 }
 
-// Mock data cho khách hàng (tăng số lượng để demo phân trang)
-const initialCustomerData: Customer[] = [
-  {
-    user_id: 101,
-    full_name: "Nguyễn Thị Lan",
-    email: "nguyen.thi.lan@gmail.com",
-    phone: "0123456789",
-    address: "123 Đường Nguyễn Huệ, Quận 1, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-01-10T08:30:00Z",
-    total_orders: 15,
-    total_spent: 2500000
-  },
-  {
-    user_id: 102,
-    full_name: "Trần Văn Minh",
-    email: "tran.van.minh@yahoo.com",
-    phone: "0987654321",
-    address: "456 Đường Lê Lợi, Quận 2, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-02-15T09:15:00Z",
-    total_orders: 8,
-    total_spent: 1200000
-  },
-  {
-    user_id: 103,
-    full_name: "Lê Thị Hoa",
-    email: "le.thi.hoa@gmail.com",
-    phone: "0369258147",
-    address: "789 Đường Điện Biên Phủ, Quận 3, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-03-05T10:00:00Z",
-    total_orders: 22,
-    total_spent: 3800000
-  },
-  {
-    user_id: 104,
-    full_name: "Phạm Văn Tuấn",
-    email: "pham.van.tuan@outlook.com",
-    phone: "0741852963",
-    address: "321 Đường Cách Mạng Tháng 8, Quận 4, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-04-12T11:30:00Z",
-    total_orders: 5,
-    total_spent: 850000
-  },
-  {
-    user_id: 105,
-    full_name: "Hoàng Thị Mai",
-    email: "hoang.thi.mai@gmail.com",
-    phone: "0527419638",
-    address: "654 Đường Nguyễn Thị Minh Khai, Quận 5, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-05-20T14:45:00Z",
-    total_orders: 12,
-    total_spent: 1950000
-  },
-  {
-    user_id: 106,
-    full_name: "Võ Văn Đức",
-    email: "vo.van.duc@gmail.com",
-    phone: "0963258741",
-    address: "987 Đường Võ Văn Tần, Quận 6, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-06-08T16:20:00Z",
-    total_orders: 3,
-    total_spent: 450000
-  },
-  {
-    user_id: 107,
-    full_name: "Đặng Thị Linh",
-    email: "dang.thi.linh@gmail.com",
-    phone: "0852741963",
-    address: "147 Đường Nguyễn Văn Cừ, Quận 7, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-07-15T09:30:00Z",
-    total_orders: 18,
-    total_spent: 3200000
-  },
-  {
-    user_id: 108,
-    full_name: "Bùi Văn Hùng",
-    email: "bui.van.hung@yahoo.com",
-    phone: "0741852963",
-    address: "258 Đường Nguyễn Thị Định, Quận 8, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-08-22T11:45:00Z",
-    total_orders: 7,
-    total_spent: 1100000
-  },
-  {
-    user_id: 109,
-    full_name: "Phan Thị Nga",
-    email: "phan.thi.nga@gmail.com",
-    phone: "0369258147",
-    address: "369 Đường Nguyễn Văn Linh, Quận 9, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-09-10T14:15:00Z",
-    total_orders: 25,
-    total_spent: 4200000
-  },
-  {
-    user_id: 110,
-    full_name: "Ngô Văn Thành",
-    email: "ngo.van.thanh@outlook.com",
-    phone: "0527419638",
-    address: "741 Đường Nguyễn Văn Trỗi, Quận 10, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-10-05T08:00:00Z",
-    total_orders: 9,
-    total_spent: 1600000
-  },
-  {
-    user_id: 111,
-    full_name: "Trịnh Thị Thu",
-    email: "trinh.thi.thu@gmail.com",
-    phone: "0963258741",
-    address: "852 Đường Nguyễn Văn Cừ, Quận 11, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-11-12T10:30:00Z",
-    total_orders: 14,
-    total_spent: 2300000
-  },
-  {
-    user_id: 112,
-    full_name: "Lý Văn Nam",
-    email: "ly.van.nam@yahoo.com",
-    phone: "0741852963",
-    address: "963 Đường Nguyễn Văn Linh, Quận 12, TP.HCM",
-    role: "CUSTOMER",
-    created_at: "2024-12-01T13:20:00Z",
-    total_orders: 6,
-    total_spent: 950000
-  }
-];
-
 export default function CustomerTable() {
-  // Pagination state
-  const [customers] = useState<Customer[]>(initialCustomerData);
+  // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Calculate pagination
-  const totalItems = customers.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCustomers = customers.slice(startIndex, endIndex);
+  // React Query hooks
+  const searchRequest = {
+    page: currentPage - 1, // API sử dụng 0-based pagination
+    size: itemsPerPage,
+    sorts: [],
+    filters: searchTerm ? [{ field: 'fullName', operator: 'contains', value: searchTerm }] : []
+  };
+
+  const { data: customersData, isLoading, error, refetch } = useUsersByRole('CUSTOMER', searchRequest);
+
+  // Convert API data to Customer format
+  const customers: Customer[] = customersData?.content?.map((user: User) => ({
+    user_id: user.id || 0,
+    full_name: user.fullName,
+    email: user.email,
+    phone: user.phone,
+    address: user.address,
+    role: 'CUSTOMER' as const,
+    created_at: new Date().toISOString(), // API không trả về created_at, sử dụng thời gian hiện tại
+    total_orders: Math.floor(Math.random() * 30) + 1, // Mock data cho demo
+    total_spent: Math.floor(Math.random() * 5000000) + 100000 // Mock data cho demo
+  })) || [];
+
+  // Pagination data
+  const totalItems = customersData?.totalElements || 0;
+  const totalPages = customersData?.totalPages || 0;
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -180,6 +66,37 @@ export default function CustomerTable() {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
   };
+
+  // Handle search
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-gray-600">Đang tải...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">Có lỗi xảy ra khi tải dữ liệu</div>
+        <button 
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   // Function to format date
   const formatDate = (dateString: string) => {
@@ -210,7 +127,24 @@ export default function CustomerTable() {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
+    <>
+      {/* Search Input */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <input
+            type="text"
+            placeholder="Tìm kiếm khách hàng..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+          <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
         <Table>
           {/* Table Header */}
@@ -269,7 +203,7 @@ export default function CustomerTable() {
 
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-            {currentCustomers.map((customer) => {
+            {customers.map((customer) => {
               const customerLevel = getCustomerLevelBadge(customer.total_spent || 0);
               
               return (
@@ -360,6 +294,7 @@ export default function CustomerTable() {
         onItemsPerPageChange={handleItemsPerPageChange}
         showItemsPerPage={true}
       />
-    </div>
+      </div>
+    </>
   );
 }
