@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Cấu hình axios instance
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3333/api',
+  baseURL: 'http://172.188.81.232:3333',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -41,6 +41,7 @@ apiClient.interceptors.response.use(
 );
 
 // Export tất cả services
+export { authService } from './authService';
 export { userService } from './userService';
 export { categoryService } from './categoryService';
 export { productService } from './productService';
@@ -50,12 +51,35 @@ export { promotionService } from './promotionService';
 export { inventoryService } from './inventoryService';
 
 // Export types
-export type { User, SearchRequest, SearchResponse } from './userService';
-export type { Category } from './categoryService';
-export type { Product } from './productService';
-export type { Invoice } from './invoiceService';
-export type { Payment } from './paymentService';
-export type { Promotion } from './promotionService';
-export type { InventoryLog } from './inventoryService';
+export type { 
+  LoginRequest, 
+  RegisterRequest, 
+  AuthResponse, 
+  UserProfile 
+} from './authService';
+export type { 
+  User, 
+  PaginationRequest, 
+  PaginationResponse 
+} from './userService';
+export type { 
+  Category 
+} from './categoryService';
+export type { 
+  Product 
+} from './productService';
+export type { 
+  Invoice, 
+  InvoiceItem 
+} from './invoiceService';
+export type { 
+  Payment 
+} from './paymentService';
+export type { 
+  Promotion 
+} from './promotionService';
+export type { 
+  InventoryLog 
+} from './inventoryService';
 
 export default apiClient;

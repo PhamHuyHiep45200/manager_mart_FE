@@ -11,8 +11,10 @@ import EmployeeFormPopup from "./EmployeeFormPopup";
 import ConfirmPopup from "./ConfirmPopup";
 import Pagination from "../../common/Pagination";
 import { Employee, EmployeeFormData } from "./types";
-import { useUsersByRole, useCreateUser, useUpdateUser } from '../../../hooks/useUsers';
+import { useUsersByRole, useCreateUser, useUpdateUser, useDeleteUser } from '../../../hooks/useUsers';
 import { User } from '../../../services/userService';
+import { showToast } from '../../../utils/toast';
+import { useDebounce } from '../../../hooks/useDebounce';
 
 export default function EmployeeTable() {
   // State management
@@ -24,37 +26,53 @@ export default function EmployeeTable() {
   const [formMode, setFormMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
-    type: 'lock' | 'unlock';
+    type: 'delete';
     employee: Employee;
   } | null>(null);
 
+  // Debounce search term để tối ưu hiệu suất
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   // React Query hooks
   const searchRequest = {
-    page: currentPage - 1, // API sử dụng 0-based pagination
+    page: currentPage,
     size: itemsPerPage,
-    sorts: [],
-    filters: searchTerm ? [{ field: 'fullName', operator: 'contains', value: searchTerm }] : []
+    sortField: [
+      {
+        fieldName: 'createdDate',
+        sort: 'DESC' as const
+      }
+    ],
+    lsCondition: debouncedSearchTerm ? [
+      {
+        property: 'fullName',
+        propertyType: 'string' as const,
+        operator: 'CONTAINS' as const,
+        value: debouncedSearchTerm
+      }
+    ] : []
   };
 
   const { data: employeesData, isLoading, error, refetch } = useUsersByRole('STAFF', searchRequest);
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
 
   // Convert API data to Employee format
-  const employees: Employee[] = employeesData?.content?.map((user: User) => ({
+  const employees: Employee[] = employeesData?.data?.content?.map((user: User) => ({
     user_id: user.id || 0,
     full_name: user.fullName,
     email: user.email,
     phone: user.phone,
-    address: user.address,
-          role: user.role === 'STAFF' ? 'EMPLOYEE' : 'ADMIN',
+    address: user.address || '',
+    role: user.role as 'EMPLOYEE' | 'CUSTOMER',
     created_at: new Date().toISOString(), // API không trả về created_at, sử dụng thời gian hiện tại
     is_locked: false // API không có field này, mặc định false
   })) || [];
 
   // Pagination data
-  const totalItems = employeesData?.totalElements || 0;
-  const totalPages = employeesData?.totalPages || 0;
+  const totalItems = employeesData?.data?.totalElements || 0;
+  const totalPages = employeesData?.data?.totalPages || 0;
 
   // Function to format date
   const formatDate = (dateString: string) => {
@@ -67,12 +85,12 @@ export default function EmployeeTable() {
 
   // Function to get role badge color
   const getRoleBadgeColor = (role: string) => {
-    return role === 'ADMIN' ? 'error' : 'success';
+    return role === 'EMPLOYEE' ? 'error' : 'success';
   };
 
   // Function to get role display text
   const getRoleDisplayText = (role: string) => {
-    return role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên';
+    return role === 'EMPLOYEE' ? 'Nhân viên' : 'Khách hàng';
   };
 
   // Handle add employee
@@ -98,10 +116,11 @@ export default function EmployeeTable() {
           email: employeeData.email,
           phone: employeeData.phone,
           address: employeeData.address,
-          role: employeeData.role === 'EMPLOYEE' ? 'STAFF' : 'ADMIN',
+          role: employeeData.role as 'EMPLOYEE' | 'CUSTOMER',
           password: employeeData.password || 'defaultPassword123'
         };
         await createUserMutation.mutateAsync(userData);
+        showToast.success('Thêm nhân viên thành công!');
       } else if (selectedEmployee) {
         const userData: Partial<User> & { id: number } = {
           id: selectedEmployee.user_id,
@@ -109,33 +128,42 @@ export default function EmployeeTable() {
           email: employeeData.email,
           phone: employeeData.phone,
           address: employeeData.address,
-          role: employeeData.role === 'EMPLOYEE' ? 'STAFF' : 'ADMIN'
+          role: employeeData.role as 'EMPLOYEE' | 'CUSTOMER',
         };
         await updateUserMutation.mutateAsync(userData);
+        showToast.success('Cập nhật thông tin nhân viên thành công!');
       }
       setIsFormPopupOpen(false);
     } catch (error) {
       console.error('Error saving employee:', error);
+      showToast.error('Có lỗi xảy ra khi lưu thông tin nhân viên!');
     }
   };
 
-  // Handle lock/unlock employee
-  const handleLockToggle = (employee: Employee) => {
+  // Handle delete employee
+  const handleDeleteEmployee = (employee: Employee) => {
     setConfirmAction({
-      type: employee.is_locked ? 'unlock' : 'lock',
+      type: 'delete',
       employee
     });
     setIsConfirmPopupOpen(true);
   };
 
-  // Handle confirm lock/unlock (tạm thời disable vì API không hỗ trợ)
-  const handleConfirmLockToggle = () => {
-    // TODO: Implement lock/unlock API when available
-    console.log('Lock/unlock functionality not implemented yet');
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (confirmAction?.employee) {
+      try {
+        await deleteUserMutation.mutateAsync(confirmAction.employee.user_id);
+        showToast.success('Xóa nhân viên thành công!');
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        showToast.error('Có lỗi xảy ra khi xóa nhân viên!');
+      }
+    }
     setIsConfirmPopupOpen(false);
   };
 
-  // Handle search
+  // Handle search - chỉ cập nhật state local, debounce sẽ xử lý API call
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1); // Reset to first page when searching
@@ -188,7 +216,7 @@ export default function EmployeeTable() {
               placeholder="Tìm kiếm nhân viên..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
             <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -262,7 +290,7 @@ export default function EmployeeTable() {
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
             {employees.map((employee) => (
-              <TableRow key={employee.user_id} className={employee.is_locked ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50' : ''}>
+              <TableRow key={employee.user_id}>
                 <TableCell className="px-5 py-4 sm:px-6 text-start">
                   <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
                     #{employee.user_id}
@@ -278,9 +306,6 @@ export default function EmployeeTable() {
                     <div>
                       <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                         {employee.full_name}
-                        {employee.is_locked && (
-                          <span className="ml-2 text-xs text-red-500">(Đã khóa)</span>
-                        )}
                       </span>
                       <span className="block text-gray-500 text-theme-xs dark:text-gray-400">
                         {employee.address}
@@ -317,23 +342,13 @@ export default function EmployeeTable() {
                       </svg>
                     </button>
                     <button 
-                      onClick={() => handleLockToggle(employee)}
-                      className={`transition-colors ${
-                        employee.is_locked 
-                          ? 'text-green-500 hover:text-green-600' 
-                          : 'text-red-500 hover:text-red-600'
-                      }`}
-                      title={employee.is_locked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                      onClick={() => handleDeleteEmployee(employee)}
+                      className="text-red-500 hover:text-red-600 transition-colors"
+                      title="Xóa nhân viên"
                     >
-                      {employee.is_locked ? (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      )}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </TableCell>
@@ -368,15 +383,11 @@ export default function EmployeeTable() {
     <ConfirmPopup
       isOpen={isConfirmPopupOpen}
       onClose={() => setIsConfirmPopupOpen(false)}
-      onConfirm={handleConfirmLockToggle}
-      title={confirmAction?.type === 'lock' ? 'Khóa tài khoản nhân viên' : 'Mở khóa tài khoản nhân viên'}
-      message={
-        confirmAction?.type === 'lock'
-          ? `Bạn có chắc chắn muốn khóa tài khoản của nhân viên "${confirmAction?.employee.full_name}"? Nhân viên này sẽ không thể đăng nhập vào hệ thống.`
-          : `Bạn có chắc chắn muốn mở khóa tài khoản của nhân viên "${confirmAction?.employee.full_name}"? Nhân viên này sẽ có thể đăng nhập vào hệ thống trở lại.`
-      }
-      confirmText={confirmAction?.type === 'lock' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-      type={confirmAction?.type === 'lock' ? 'danger' : 'info'}
+      onConfirm={handleConfirmDelete}
+      title="Xóa nhân viên"
+      message={`Bạn có chắc chắn muốn xóa nhân viên "${confirmAction?.employee.full_name}"? Hành động này không thể hoàn tác.`}
+      confirmText="Xóa nhân viên"
+      type="danger"
     />
   </>
   );

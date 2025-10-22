@@ -1,19 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { promotionService, Promotion } from '../services/promotionService';
+import { promotionService, Promotion, SearchRequest } from '../services/promotionService';
 
 // Query keys cho promotion API
 export const promotionKeys = {
   all: ['promotions'] as const,
   lists: () => [...promotionKeys.all, 'list'] as const,
+  list: (filters: SearchRequest) => [...promotionKeys.lists(), filters] as const,
   details: () => [...promotionKeys.all, 'detail'] as const,
   detail: (id: number) => [...promotionKeys.details(), id] as const,
 };
 
-// Hook để lấy tất cả promotions - luôn fetch data mới nhất
-export const usePromotions = () => {
+// Hook để lấy promotions với search và pagination - luôn fetch data mới nhất
+export const usePromotions = (searchRequest: SearchRequest) => {
   return useQuery({
-    queryKey: promotionKeys.lists(),
-    queryFn: () => promotionService.getAll(),
+    queryKey: promotionKeys.list(searchRequest),
+    queryFn: () => promotionService.search(searchRequest),
     staleTime: 0, // Luôn fetch data mới nhất cho admin
     refetchOnWindowFocus: true,
     refetchOnMount: true,

@@ -5,7 +5,7 @@ export interface Employee {
   email: string;
   phone: string;
   address: string;
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: 'EMPLOYEE' | 'CUSTOMER';
   created_at: string;
   is_locked?: boolean;
 }
@@ -17,7 +17,7 @@ export interface EmployeeFormData {
   email: string;
   phone: string;
   address: string;
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: 'EMPLOYEE' | 'CUSTOMER';
   password?: string;
   created_at?: string;
   is_locked?: boolean;

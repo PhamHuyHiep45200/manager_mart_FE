@@ -4,10 +4,104 @@ import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
+import Button from "../ui/button/Button";
+import { useRegister } from "../../hooks/useAuth";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { RegisterRequest } from "../../services";
+
+// Form interface để match với schema
+interface RegisterFormData {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  password: string;
+  role: 'CUSTOMER' | 'STAFF' | 'ADMIN';
+}
+
+// Yup validation schema
+const registerSchema = yup.object({
+  fullName: yup
+    .string()
+    .required('Full name is required')
+    .min(2, 'Full name must be at least 2 characters')
+    .max(50, 'Full name must not exceed 50 characters'),
+  phone: yup
+    .string()
+    .required('Phone number is required')
+    .matches(
+      /^[+]?[0-9\s\-()]{10,}$/,
+      'Invalid phone number'
+    ),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Invalid email address')
+    .min(5, 'Email must be at least 5 characters')
+    .max(100, 'Email must not exceed 100 characters'),
+  address: yup
+    .string()
+    .required('Address is required')
+    .min(5, 'Address must be at least 5 characters')
+    .max(200, 'Address must not exceed 200 characters'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .max(50, 'Password must not exceed 50 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    ),
+  role: yup
+    .mixed<'CUSTOMER' | 'STAFF' | 'ADMIN'>()
+    .required('Please select a role')
+    .oneOf(['CUSTOMER', 'STAFF', 'ADMIN'], 'Invalid role selected'),
+}) as yup.ObjectSchema<RegisterFormData>;
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  
+  const registerMutation = useRegister();
+  
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid, isDirty },
+  } = useForm<RegisterFormData>({
+    resolver: yupResolver(registerSchema),
+    mode: 'onTouched', // Enable real-time validation
+    defaultValues: {
+      fullName: '',
+      phone: '',
+      email: '',
+      address: '',
+      password: '',
+      role: 'CUSTOMER' as const,
+    },
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    console.log('Form submitted with data:', data);
+    try {
+      // Convert form data to RegisterRequest
+      const registerData: RegisterRequest = {
+        fullName: data.fullName,
+        phone: data.phone,
+        email: data.email,
+        address: data.address,
+        password: data.password,
+        role: data.role,
+      };
+      await registerMutation.mutateAsync(registerData);
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
@@ -82,69 +176,168 @@ export default function SignUpForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  {/* <!-- First Name --> */}
+                  {/* Full Name */}
                   <div className="sm:col-span-1">
                     <Label>
-                      First Name<span className="text-error-500">*</span>
+                      Full Name<span className="text-error-500">*</span>
                     </Label>
-                    <Input
-                      type="text"
-                      id="fname"
-                      name="fname"
-                      placeholder="Enter your first name"
+                    <Controller
+                      name="fullName"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          {...field}
+                          type="text"
+                          placeholder="Enter your full name"
+                          error={!!fieldState.error}
+                        />
+                      )}
                     />
+                    {errors.fullName && (
+                      <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
+                    )}
                   </div>
-                  {/* <!-- Last Name --> */}
+                  {/* Phone */}
                   <div className="sm:col-span-1">
                     <Label>
-                      Last Name<span className="text-error-500">*</span>
+                      Phone<span className="text-error-500">*</span>
                     </Label>
-                    <Input
-                      type="text"
-                      id="lname"
-                      name="lname"
-                      placeholder="Enter your last name"
+                    <Controller
+                      name="phone"
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <Input
+                          {...field}
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          error={!!fieldState.error}
+                        />
+                      )}
                     />
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
+                    )}
                   </div>
                 </div>
-                {/* <!-- Email --> */}
+                
+                {/* Email */}
                 <div>
                   <Label>
                     Email<span className="text-error-500">*</span>
                   </Label>
-                  <Input
-                    type="email"
-                    id="email"
+                  <Controller
                     name="email"
-                    placeholder="Enter your email"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="Enter your email"
+                        error={!!fieldState.error}
+                      />
+                    )}
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  )}
                 </div>
-                {/* <!-- Password --> */}
+                
+                {/* Address */}
+                <div>
+                  <Label>
+                    Address<span className="text-error-500">*</span>
+                  </Label>
+                  <Controller
+                    name="address"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <Input
+                        {...field}
+                        type="text"
+                        placeholder="Enter your address"
+                        error={!!fieldState.error}
+                      />
+                    )}
+                  />
+                  {errors.address && (
+                    <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>
+                  )}
+                </div>
+                
+                {/* Password */}
                 <div>
                   <Label>
                     Password<span className="text-error-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Input
-                      placeholder="Enter your password"
-                      type={showPassword ? "text" : "password"}
-                    />
-                    <span
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                    >
-                      {showPassword ? (
-                        <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      ) : (
-                        <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      )}
-                    </span>
-                  </div>
+                  <Controller
+                    name="password"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Enter your password"
+                          error={!!fieldState.error}
+                        />
+                        <span
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                        >
+                          {showPassword ? (
+                            <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                          ) : (
+                            <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                  )}
                 </div>
-                {/* <!-- Checkbox --> */}
+                
+                {/* Role Selection */}
+                <div>
+                  <Label>
+                    Role<span className="text-error-500">*</span>
+                  </Label>
+                  <Controller
+                    name="role"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <select
+                        {...field}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent dark:bg-gray-800 dark:text-white ${
+                          fieldState.error 
+                            ? 'border-red-500' 
+                            : 'border-gray-300 dark:border-gray-600'
+                        }`}
+                      >
+                        <option value="">Select your role</option>
+                        <option value="CUSTOMER">Customer</option>
+                        <option value="STAFF">Staff</option>
+                        <option value="ADMIN">Admin</option>
+                      </select>
+                    )}
+                  />
+                  {errors.role && (
+                    <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                  )}
+                </div>
+                
+                {/* Error message */}
+                {registerMutation.error && (
+                  <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                    {typeof registerMutation.error === 'string' ? registerMutation.error : 'Registration failed. Please try again.'}
+                  </div>
+                )}
+                
+                {/* Checkbox */}
                 <div className="flex items-center gap-3">
                   <Checkbox
                     className="w-5 h-5"
@@ -162,11 +355,16 @@ export default function SignUpForm() {
                     </span>
                   </p>
                 </div>
-                {/* <!-- Button --> */}
+                
+                {/* Button */}
                 <div>
-                  <button className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Sign Up
-                  </button>
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    disabled={registerMutation.isPending || !isValid || !isDirty || !isChecked}
+                  >
+                    {registerMutation.isPending ? 'Creating Account...' : 'Sign Up'}
+                  </Button>
                 </div>
               </div>
             </form>

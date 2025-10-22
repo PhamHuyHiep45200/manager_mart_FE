@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
 import { PromotionFormData } from './types';
 
 interface PromotionFormPopupProps {
@@ -17,10 +19,17 @@ export default function PromotionFormPopup({
   promotion, 
   mode 
 }: PromotionFormPopupProps) {
+  const startDateRef = useRef<HTMLInputElement>(null);
+  const endDateRef = useRef<HTMLInputElement>(null);
+  const startDatePickerRef = useRef<flatpickr.Instance | null>(null);
+  const endDatePickerRef = useRef<flatpickr.Instance | null>(null);
+
   const {
     control,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<PromotionFormData>({
     defaultValues: {
@@ -32,6 +41,55 @@ export default function PromotionFormPopup({
     },
     mode: 'onChange'
   });
+
+  // Watch start_date để validate end_date
+  const startDate = watch('start_date');
+
+  // Initialize flatpickr calendars
+  useEffect(() => {
+    if (isOpen && startDateRef.current && endDateRef.current) {
+      // Initialize start date picker
+      if (startDatePickerRef.current) {
+        startDatePickerRef.current.destroy();
+      }
+      startDatePickerRef.current = flatpickr(startDateRef.current, {
+        dateFormat: 'Y-m-d',
+        onChange: (selectedDates) => {
+          if (selectedDates.length > 0) {
+            setValue('start_date', selectedDates[0].toISOString().split('T')[0]);
+            // Update end date picker min date
+            if (endDatePickerRef.current) {
+              endDatePickerRef.current.set('minDate', selectedDates[0]);
+            }
+          }
+        }
+      });
+
+      // Initialize end date picker
+      if (endDatePickerRef.current) {
+        endDatePickerRef.current.destroy();
+      }
+      endDatePickerRef.current = flatpickr(endDateRef.current, {
+        dateFormat: 'Y-m-d',
+        minDate: startDate || 'today',
+        onChange: (selectedDates) => {
+          if (selectedDates.length > 0) {
+            setValue('end_date', selectedDates[0].toISOString().split('T')[0]);
+          }
+        }
+      });
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (startDatePickerRef.current) {
+        startDatePickerRef.current.destroy();
+      }
+      if (endDatePickerRef.current) {
+        endDatePickerRef.current.destroy();
+      }
+    };
+  }, [isOpen, startDate, setValue]);
 
   // Reset form when popup opens/closes or promotion changes
   useEffect(() => {
@@ -89,7 +147,13 @@ export default function PromotionFormPopup({
       required: 'Ngày bắt đầu không được để trống'
     },
     end_date: {
-      required: 'Ngày kết thúc không được để trống'
+      required: 'Ngày kết thúc không được để trống',
+      validate: (value: string) => {
+        if (startDate && value && new Date(value) <= new Date(startDate)) {
+          return 'Ngày kết thúc phải sau ngày bắt đầu';
+        }
+        return true;
+      }
     }
   };
 
@@ -101,7 +165,7 @@ export default function PromotionFormPopup({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -187,15 +251,25 @@ export default function PromotionFormPopup({
               control={control}
               rules={validationRules.start_date}
               render={({ field }) => (
-                <input
-                  {...field}
-                  type="date"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                    errors.start_date 
-                      ? 'border-red-500 dark:border-red-400' 
-                      : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    {...field}
+                    ref={startDateRef}
+                    type="text"
+                    readOnly
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
+                      errors.start_date 
+                        ? 'border-red-500 dark:border-red-400' 
+                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    }`}
+                    placeholder="Chọn ngày bắt đầu"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
               )}
             />
             {errors.start_date && (
@@ -213,15 +287,25 @@ export default function PromotionFormPopup({
               control={control}
               rules={validationRules.end_date}
               render={({ field }) => (
-                <input
-                  {...field}
-                  type="date"
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                    errors.end_date 
-                      ? 'border-red-500 dark:border-red-400' 
-                      : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    {...field}
+                    ref={endDateRef}
+                    type="text"
+                    readOnly
+                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
+                      errors.end_date 
+                        ? 'border-red-500 dark:border-red-400' 
+                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    }`}
+                    placeholder="Chọn ngày kết thúc"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
               )}
             />
             {errors.end_date && (

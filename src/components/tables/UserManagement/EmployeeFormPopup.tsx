@@ -44,7 +44,7 @@ export default function EmployeeFormPopup({
           email: employee.email,
           phone: employee.phone,
           address: employee.address,
-          role: employee.role,
+          role: "EMPLOYEE",
           password: ''
         });
       } else {
@@ -100,14 +100,17 @@ export default function EmployeeFormPopup({
   };
 
   const onFormSubmit = (data: EmployeeFormData) => {
-    onSubmit(data);
+    onSubmit({
+      ...data,
+      role: 'EMPLOYEE'
+    });
     onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -232,26 +235,6 @@ export default function EmployeeFormPopup({
             {errors.address && (
               <p className="mt-1 text-sm text-red-500">{errors.address.message}</p>
             )}
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Vai trò <span className="text-red-500">*</span>
-            </label>
-            <Controller
-              name="role"
-              control={control}
-              render={({ field }) => (
-                <select
-                  {...field}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="EMPLOYEE">Nhân viên</option>
-                  <option value="ADMIN">Quản trị viên</option>
-                </select>
-              )}
-            />
           </div>
 
           {/* Password - Only show for add mode */}

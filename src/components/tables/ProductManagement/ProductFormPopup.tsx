@@ -1,110 +1,158 @@
-import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { ProductFormData, Category } from './types';
+import { useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { ProductFormData, Category } from "./types";
+import {
+  useRootCategories,
+  useCategoryChildren,
+} from "../../../hooks/useCategories";
 
 interface ProductFormPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (product: ProductFormData) => void;
   product?: ProductFormData | null;
-  mode: 'add' | 'edit';
-  categories: Category[];
+  mode: "add" | "edit";
 }
 
-export default function ProductFormPopup({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  product, 
+export default function ProductFormPopup({
+  isOpen,
+  onClose,
+  onSubmit,
+  product,
   mode,
-  categories
 }: ProductFormPopupProps) {
+  // State để quản lý category parent và child
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
+  const [childCategories, setChildCategories] = useState<Category[]>([]);
+
+  // Hooks để lấy dữ liệu categories
+  const { data: rootCategories = [], isLoading: isLoadingRoots } =
+    useRootCategories();
+  const { data: fetchedChildCategories = [], isLoading: isLoadingChildren } =
+    useCategoryChildren(selectedParentId || 0);
+
   const {
     control,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting }
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     defaultValues: {
-      category_id: 1,
-      name: '',
-      description: '',
+      category_id: 0,
+      name: "",
+      description: "",
       price: 0,
       stock: 0,
-      image_url: ''
+      image_url: "",
     },
-    mode: 'onChange'
+    mode: "onChange",
   });
+
+  // Watch parent category để trigger fetch children
+  const watchedParentId = watch("parent_category_id");
+
+  // Effect để cập nhật child categories khi parent category thay đổi
+  useEffect(() => {
+    if (watchedParentId) {
+      setSelectedParentId(watchedParentId);
+      // Reset child category khi parent thay đổi
+      setValue("category_id", 0);
+    } else {
+      setSelectedParentId(null);
+      setChildCategories([]);
+      setValue("category_id", 0);
+    }
+  }, [watchedParentId, setValue]);
+
+  // Effect để cập nhật child categories từ API
+  useEffect(() => {
+    if (
+      JSON.stringify(fetchedChildCategories) === JSON.stringify(childCategories)
+    )
+      return;
+    if (fetchedChildCategories.length > 0) {
+      setChildCategories(fetchedChildCategories);
+    } else {
+      setChildCategories([]);
+    }
+  }, [fetchedChildCategories]);
 
   // Reset form when popup opens/closes or product changes
   useEffect(() => {
     if (isOpen) {
-      if (mode === 'edit' && product) {
+      if (mode === "edit" && product) {
         reset({
           product_id: product.product_id,
+          parent_category_id: product.parent_category_id || 0,
           category_id: product.category_id,
           name: product.name,
           description: product.description,
           price: product.price,
           stock: product.stock,
-          image_url: product.image_url || ''
+          image_url: product.image_url || "",
         });
       } else {
         reset({
-          category_id: categories.length > 0 ? categories[0].category_id : 1,
-          name: '',
-          description: '',
+          parent_category_id: 0,
+          category_id: 0,
+          name: "",
+          description: "",
           price: 0,
           stock: 0,
-          image_url: ''
+          image_url: "",
         });
       }
     }
-  }, [isOpen, product, mode, reset, categories]);
+  }, [isOpen, product, mode, reset]);
 
   // Validation rules
   const validationRules = {
+    parent_category_id: {
+      required: "Danh mục cha không được để trống",
+    },
     category_id: {
-      required: 'Danh mục không được để trống'
+      required: "Danh mục con không được để trống",
     },
     name: {
-      required: 'Tên sản phẩm không được để trống',
+      required: "Tên sản phẩm không được để trống",
       minLength: {
         value: 2,
-        message: 'Tên sản phẩm phải có ít nhất 2 ký tự'
+        message: "Tên sản phẩm phải có ít nhất 2 ký tự",
       },
       maxLength: {
         value: 150,
-        message: 'Tên sản phẩm không được quá 150 ký tự'
-      }
+        message: "Tên sản phẩm không được quá 150 ký tự",
+      },
     },
     description: {
-      required: 'Mô tả không được để trống',
+      required: "Mô tả không được để trống",
       minLength: {
         value: 10,
-        message: 'Mô tả phải có ít nhất 10 ký tự'
-      }
+        message: "Mô tả phải có ít nhất 10 ký tự",
+      },
     },
     price: {
-      required: 'Giá sản phẩm không được để trống',
+      required: "Giá sản phẩm không được để trống",
       min: {
         value: 1,
-        message: 'Giá sản phẩm phải lớn hơn 0'
-      }
+        message: "Giá sản phẩm phải lớn hơn 0",
+      },
     },
     stock: {
-      required: 'Số lượng tồn kho không được để trống',
+      required: "Số lượng tồn kho không được để trống",
       min: {
         value: 0,
-        message: 'Số lượng tồn kho không được âm'
-      }
+        message: "Số lượng tồn kho không được âm",
+      },
     },
     image_url: {
       pattern: {
         value: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
-        message: 'URL hình ảnh không hợp lệ'
-      }
-    }
+        message: "URL hình ảnh không hợp lệ",
+      },
+    },
   };
 
   const onFormSubmit = (data: ProductFormData) => {
@@ -115,19 +163,29 @@ export default function ProductFormPopup({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {mode === 'add' ? 'Thêm sản phẩm mới' : 'Chỉnh sửa sản phẩm'}
+            {mode === "add" ? "Thêm sản phẩm mới" : "Chỉnh sửa sản phẩm"}
           </h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -149,23 +207,68 @@ export default function ProductFormPopup({
                     {...field}
                     type="text"
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.name 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.name
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
                     placeholder="Nhập tên sản phẩm"
                   />
                 )}
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
-            {/* Category */}
+            {/* Parent Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Danh mục <span className="text-red-500">*</span>
+                Danh mục cha <span className="text-red-500">*</span>
+              </label>
+              <Controller
+                name="parent_category_id"
+                control={control}
+                rules={validationRules.parent_category_id}
+                render={({ field }) => (
+                  <select
+                    {...field}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                      errors.parent_category_id
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    }`}
+                    disabled={isLoadingRoots}
+                  >
+                    <option value={0}>Chọn danh mục cha</option>
+                    {rootCategories.map((category) => (
+                      <option
+                        key={category.categoryId}
+                        value={category.categoryId}
+                      >
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              />
+              {errors.parent_category_id && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.parent_category_id.message}
+                </p>
+              )}
+              {isLoadingRoots && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Đang tải danh mục...
+                </p>
+              )}
+            </div>
+
+            {/* Child Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Danh mục con <span className="text-red-500">*</span>
               </label>
               <Controller
                 name="category_id"
@@ -175,13 +278,18 @@ export default function ProductFormPopup({
                   <select
                     {...field}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.category_id 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.category_id
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
+                    disabled={!selectedParentId || isLoadingChildren}
                   >
-                    {categories.map(category => (
-                      <option key={category.category_id} value={category.category_id}>
+                    <option value={0}>Chọn danh mục con</option>
+                    {childCategories.map((category) => (
+                      <option
+                        key={category.categoryId}
+                        value={category.categoryId}
+                      >
                         {category.name}
                       </option>
                     ))}
@@ -189,7 +297,19 @@ export default function ProductFormPopup({
                 )}
               />
               {errors.category_id && (
-                <p className="mt-1 text-sm text-red-500">{errors.category_id.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.category_id.message}
+                </p>
+              )}
+              {isLoadingChildren && selectedParentId && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Đang tải danh mục con...
+                </p>
+              )}
+              {!selectedParentId && (
+                <p className="mt-1 text-sm text-gray-500">
+                  Vui lòng chọn danh mục cha trước
+                </p>
               )}
             </div>
 
@@ -208,16 +328,18 @@ export default function ProductFormPopup({
                     type="number"
                     min="1"
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.price 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.price
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
                     placeholder="Nhập giá sản phẩm"
                   />
                 )}
               />
               {errors.price && (
-                <p className="mt-1 text-sm text-red-500">{errors.price.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.price.message}
+                </p>
               )}
             </div>
 
@@ -236,16 +358,18 @@ export default function ProductFormPopup({
                     type="number"
                     min="0"
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.stock 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.stock
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
                     placeholder="Nhập số lượng"
                   />
                 )}
               />
               {errors.stock && (
-                <p className="mt-1 text-sm text-red-500">{errors.stock.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.stock.message}
+                </p>
               )}
             </div>
 
@@ -263,16 +387,18 @@ export default function ProductFormPopup({
                     {...field}
                     type="url"
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.image_url 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.image_url
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
                     placeholder="https://example.com/image.jpg"
                   />
                 )}
               />
               {errors.image_url && (
-                <p className="mt-1 text-sm text-red-500">{errors.image_url.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.image_url.message}
+                </p>
               )}
             </div>
 
@@ -290,16 +416,18 @@ export default function ProductFormPopup({
                     {...field}
                     rows={4}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.description 
-                        ? 'border-red-500 dark:border-red-400' 
-                        : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      errors.description
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
                     placeholder="Nhập mô tả chi tiết về sản phẩm"
                   />
                 )}
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-500">{errors.description.message}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.description.message}
+                </p>
               )}
             </div>
           </div>
@@ -320,14 +448,25 @@ export default function ProductFormPopup({
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSubmitting && (
-                <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg
+                  className="w-4 h-4 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
               )}
-              {isSubmitting 
-                ? 'Đang xử lý...' 
-                : mode === 'add' ? 'Thêm sản phẩm' : 'Cập nhật'
-              }
+              {isSubmitting
+                ? "Đang xử lý..."
+                : mode === "add"
+                ? "Thêm sản phẩm"
+                : "Cập nhật"}
             </button>
           </div>
         </form>

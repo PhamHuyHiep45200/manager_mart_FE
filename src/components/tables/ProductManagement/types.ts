@@ -16,6 +16,7 @@ export interface Product {
 // Interface cho form data (với optional fields)
 export interface ProductFormData {
   product_id?: number;
+  parent_category_id?: number; // Thêm field để chọn parent category
   category_id: number;
   name: string;
   description: string;
@@ -26,8 +27,12 @@ export interface ProductFormData {
   updated_at?: string;
 }
 
-// Interface cho Category (để dropdown)
+// Interface cho Category (để dropdown) - đồng bộ với categoryService
 export interface Category {
-  category_id: number;
+  categoryId: number;
   name: string;
+  description: string;
+  parentId?: number;
+  parentName?: string;
+  children?: Category[];
 }

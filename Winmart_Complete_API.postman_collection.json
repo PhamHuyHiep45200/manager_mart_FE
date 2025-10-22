@@ -1,0 +1,1988 @@
+{
+	"info": {
+		"_postman_id": "winmart-complete-api",
+		"name": "Winmart Complete API",
+		"description": "Complete API collection for Winmart Backend Service with all endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Auto set token after successful login",
+									"if (pm.response.code === 200) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson.success && responseJson.data && responseJson.data.accessToken) {",
+									"        pm.environment.set('token', responseJson.data.accessToken);",
+									"        console.log('Token saved to environment:', responseJson.data.accessToken);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@winmart.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "User login to get JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+84901234567\",\n  \"password\": \"123456\",\n  \"address\": \"123 Main St, Ho Chi Minh City\",\n  \"role\": \"CUSTOMER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register new user account"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Auto set token after successful login",
+									"if (pm.response.code === 200) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson.success && responseJson.data && responseJson.data.accessToken) {",
+									"        pm.environment.set('token', responseJson.data.accessToken);",
+									"        console.log('Token saved to environment:', responseJson.data.accessToken);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@winmart.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"login"
+							]
+						},
+						"description": "User login via users endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "User Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Jane Smith\",\n  \"email\": \"jane@example.com\",\n  \"phone\": \"+84901234568\",\n  \"password\": \"123456\",\n  \"address\": \"456 Oak Ave, Hanoi\",\n  \"role\": \"CUSTOMER\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						},
+						"description": "User registration via users endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Admin User\",\n  \"email\": \"admin@winmart.com\",\n  \"phone\": \"+84901234569\",\n  \"password\": \"123456\",\n  \"address\": \"789 Admin St, Da Nang\",\n  \"role\": \"ADMIN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						},
+						"description": "Create new user (requires authentication)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Me (User Profile)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"me"
+							]
+						},
+						"description": "Get current user profile from JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fullName\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"+84901234567\",\n  \"password\": \"123456\",\n  \"address\": \"123 Test Street\",\n  \"role\": \"CUSTOMER\",\n  \"points\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"create"
+							]
+						},
+						"description": "Create new user using BaseController /create endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User (BaseController)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"fullName\": \"Updated User\",\n  \"email\": \"updated@example.com\",\n  \"phone\": \"+84901234567\",\n  \"password\": \"123456\",\n  \"address\": \"456 Updated Street\",\n  \"role\": \"CUSTOMER\",\n  \"points\": 100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"update"
+							]
+						},
+						"description": "Update user using BaseController /update endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Get user by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"all"
+							]
+						},
+						"description": "Get all users using BaseController /all endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Users (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortField\": [\n    {\n      \"fieldName\": \"createdDate\",\n      \"sort\": \"DESC\"\n    }\n  ],\n  \"lsCondition\": [\n    {\n      \"property\": \"role\",\n      \"propertyType\": \"string\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"CUSTOMER\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"search"
+							]
+						},
+						"description": "Search users with pagination and filters using BaseController /search endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/users/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						},
+						"description": "Delete user by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints"
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get Root Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/roots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"roots"
+							]
+						},
+						"description": "Get all root categories (categories without parent)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category Tree",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/tree",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"tree"
+							]
+						},
+						"description": "Get full category tree (hierarchical structure)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category Children",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/{{parentId}}/children",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"{{parentId}}",
+								"children"
+							]
+						},
+						"description": "Get children of a specific category"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Electronic devices and gadgets\",\n  \"parentId\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/categories/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"create"
+							]
+						},
+						"description": "Create new category using BaseController /create endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category (BaseController)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"name\": \"Updated Electronics\",\n  \"description\": \"Updated electronic devices\",\n  \"parentId\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/categories/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"update"
+							]
+						},
+						"description": "Update category using BaseController /update endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Category by ID (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"1"
+							]
+						},
+						"description": "Get category by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Categories (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"all"
+							]
+						},
+						"description": "Get all categories using BaseController /all endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Categories (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortField\": [\n    {\n      \"fieldName\": \"name\",\n      \"sort\": \"ASC\"\n    }\n  ],\n  \"lsCondition\": [\n    {\n      \"property\": \"parentId\",\n      \"propertyType\": \"long\",\n      \"operator\": \"EQUAL\",\n      \"value\": null\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/categories/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"search"
+							]
+						},
+						"description": "Search categories with pagination and filters using BaseController /search endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/categories/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"categories",
+								"1"
+							]
+						},
+						"description": "Delete category by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "Category management endpoints"
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products?page=0&size=10&sort=name,asc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "name,asc"
+								}
+							]
+						},
+						"description": "Get all products with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{productId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{productId}}"
+							]
+						},
+						"description": "Get product by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"categoryId\": 1,\n  \"name\": \"iPhone 15 Pro\",\n  \"description\": \"Latest iPhone with advanced features\",\n  \"price\": 29990000,\n  \"stock\": 50,\n  \"imageUrl\": \"https://example.com/iphone15pro.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						},
+						"description": "Create new product"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"categoryId\": 1,\n  \"name\": \"iPhone 15 Pro Max\",\n  \"description\": \"Updated iPhone with more features\",\n  \"price\": 32990000,\n  \"stock\": 30,\n  \"imageUrl\": \"https://example.com/iphone15promax.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/{{productId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{productId}}"
+							]
+						},
+						"description": "Update existing product"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/{{productId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								"{{productId}}"
+							]
+						},
+						"description": "Delete product by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Product management endpoints"
+		},
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "Create Invoice (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"customerName\": \"Test Customer\",\n  \"customerPhone\": \"+84901234567\",\n  \"totalAmount\": 100000,\n  \"status\": \"PENDING\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"create"
+							]
+						},
+						"description": "Create new invoice using BaseController /create endpoint. If customerPhone is provided, system will find existing user by phone or create new user, then automatically add points (1 point per 10,000 VND). If no phone provided, invoice will be created without points."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Invoice (BaseController)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"userId\": 1,\n  \"customerName\": \"Updated Customer\",\n  \"customerPhone\": \"+84901234567\",\n  \"totalAmount\": 150000,\n  \"status\": \"PAID\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"update"
+							]
+						},
+						"description": "Update invoice using BaseController /update endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoice by ID (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						},
+						"description": "Get invoice by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Invoices (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"all"
+							]
+						},
+						"description": "Get all invoices using BaseController /all endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Invoices (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortField\": [\n    {\n      \"fieldName\": \"createdDate\",\n      \"sort\": \"DESC\"\n    }\n  ],\n  \"lsCondition\": [\n    {\n      \"property\": \"status\",\n      \"propertyType\": \"string\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"PENDING\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"search"
+							]
+						},
+						"description": "Search invoices with pagination and filters using BaseController /search endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Invoice (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"1"
+							]
+						},
+						"description": "Delete invoice by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multiple Invoices (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"userId\": 1,\n    \"customerName\": \"Customer 1\",\n    \"customerPhone\": \"+84901111111\",\n    \"totalAmount\": 50000,\n    \"status\": \"PENDING\"\n  },\n  {\n    \"userId\": 1,\n    \"customerName\": \"Customer 2\",\n    \"customerPhone\": \"+84902222222\",\n    \"totalAmount\": 75000,\n    \"status\": \"PENDING\"\n  }\n]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/createList",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"createList"
+							]
+						},
+						"description": "Create multiple invoices using BaseController /createList endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Invoices (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2, 3]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/deleteByIds",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"deleteByIds"
+							]
+						},
+						"description": "Delete multiple invoices by IDs using BaseController /deleteByIds endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Create Invoice with Points (New Customer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"customerName\": \"New Customer\",\n  \"customerPhone\": \"+84999999999\",\n  \"totalAmount\": 50000,\n  \"status\": \"PENDING\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invoices/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								"create"
+							]
+						},
+						"description": "Test creating invoice with new customer phone. System should create new user and add 5 points (50000/10000)."
+					},
+					"response": []
+				}
+			],
+			"description": "Invoice management endpoints"
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Get All Payments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments?page=0&size=10&sort=createdAt,desc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt,desc"
+								}
+							]
+						},
+						"description": "Get all payments with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{paymentId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"{{paymentId}}"
+							]
+						},
+						"description": "Get payment by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": 1,\n  \"amount\": 29990000,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"status\": \"PENDING\",\n  \"transactionId\": \"TXN123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments"
+							]
+						},
+						"description": "Create new payment"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoiceId\": 1,\n  \"amount\": 29990000,\n  \"paymentMethod\": \"CREDIT_CARD\",\n  \"status\": \"COMPLETED\",\n  \"transactionId\": \"TXN123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{paymentId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"{{paymentId}}"
+							]
+						},
+						"description": "Update existing payment"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Payment",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{paymentId}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"payments",
+								"{{paymentId}}"
+							]
+						},
+						"description": "Delete payment by ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Payment management endpoints"
+		},
+		{
+			"name": "Promotions",
+			"item": [
+				{
+					"name": "Create Promotion (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"BLACKFRIDAY2024\",\n  \"discountPercent\": 50.00,\n  \"startDate\": \"2024-11-24\",\n  \"endDate\": \"2024-11-30\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"create"
+							]
+						},
+						"description": "Create new promotion using BaseController /create endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multiple Promotions (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"code\": \"SUMMER2024\",\n    \"discountPercent\": 30.00,\n    \"startDate\": \"2024-06-01\",\n    \"endDate\": \"2024-08-31\",\n    \"status\": \"ACTIVE\"\n  },\n  {\n    \"code\": \"WINTER2024\",\n    \"discountPercent\": 25.00,\n    \"startDate\": \"2024-12-01\",\n    \"endDate\": \"2024-12-31\",\n    \"status\": \"ACTIVE\"\n  }\n]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/createList",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"createList"
+							]
+						},
+						"description": "Create multiple promotions using BaseController /createList endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Promotion (BaseController)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"code\": \"BLACKFRIDAY2024\",\n  \"discountPercent\": 60.00,\n  \"startDate\": \"2024-11-24\",\n  \"endDate\": \"2024-12-01\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"update"
+							]
+						},
+						"description": "Update promotion using BaseController /update endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Save Promotion (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"NEWYEAR2025\",\n  \"discountPercent\": 40.00,\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-01-31\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/save",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"save"
+							]
+						},
+						"description": "Save promotion (create or update) using BaseController /save endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Promotion by ID (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/promotions/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"1"
+							]
+						},
+						"description": "Get promotion by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Promotions (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/promotions/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"all"
+							]
+						},
+						"description": "Get all promotions using BaseController /all endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Promotions (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortField\": [\n    {\n      \"fieldName\": \"startDate\",\n      \"sort\": \"DESC\"\n    }\n  ],\n  \"lsCondition\": [\n    {\n      \"property\": \"status\",\n      \"propertyType\": \"string\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"ACTIVE\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"search"
+							]
+						},
+						"description": "Search promotions with pagination and filters using BaseController /search endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Promotions Dropdown (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sorts\": [\n    {\n      \"field\": \"code\",\n      \"direction\": \"ASC\"\n    }\n  ],\n  \"filters\": [\n    {\n      \"field\": \"status\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"ACTIVE\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/dropdown",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"dropdown"
+							]
+						},
+						"description": "Get promotions dropdown list using BaseController /dropdown endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Promotion (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/promotions/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"1"
+							]
+						},
+						"description": "Delete promotion by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Promotions (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2, 3]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/promotions/deleteByIds",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"promotions",
+								"deleteByIds"
+							]
+						},
+						"description": "Delete multiple promotions by IDs using BaseController /deleteByIds endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "Promotion management endpoints using BaseController"
+		},
+		{
+			"name": "Inventory Logs",
+			"item": [
+				{
+					"name": "Create Inventory Log (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": 1,\n  \"userId\": 1,\n  \"actionType\": \"IMPORT\",\n  \"quantity\": 10,\n  \"note\": \"Stock replenishment from supplier\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"create"
+							]
+						},
+						"description": "Create new inventory log using BaseController /create endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multiple Inventory Logs (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"productId\": 1,\n    \"userId\": 1,\n    \"actionType\": \"IMPORT\",\n    \"quantity\": 20,\n    \"note\": \"Bulk import from supplier\"\n  },\n  {\n    \"productId\": 2,\n    \"userId\": 1,\n    \"actionType\": \"EXPORT\",\n    \"quantity\": 5,\n    \"note\": \"Sale transaction\"\n  }\n]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/createList",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"createList"
+							]
+						},
+						"description": "Create multiple inventory logs using BaseController /createList endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Inventory Log (BaseController)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": 1,\n  \"productId\": 1,\n  \"userId\": 1,\n  \"actionType\": \"EXPORT\",\n  \"quantity\": 5,\n  \"note\": \"Updated: Sale transaction\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/update",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"update"
+							]
+						},
+						"description": "Update inventory log using BaseController /update endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Save Inventory Log (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": 3,\n  \"userId\": 1,\n  \"actionType\": \"IMPORT\",\n  \"quantity\": 15,\n  \"note\": \"New stock arrival\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/save",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"save"
+							]
+						},
+						"description": "Save inventory log (create or update) using BaseController /save endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Inventory Log by ID (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"1"
+							]
+						},
+						"description": "Get inventory log by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Inventory Logs (BaseController)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"all"
+							]
+						},
+						"description": "Get all inventory logs using BaseController /all endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Inventory Logs (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"page\": 0,\n  \"size\": 10,\n  \"sortField\": [\n    {\n      \"fieldName\": \"createdAt\",\n      \"sort\": \"DESC\"\n    }\n  ],\n  \"lsCondition\": [\n    {\n      \"property\": \"actionType\",\n      \"propertyType\": \"string\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"IMPORT\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"search"
+							]
+						},
+						"description": "Search inventory logs with pagination and filters using BaseController /search endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Inventory Logs Dropdown (BaseController)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sorts\": [\n    {\n      \"field\": \"createdAt\",\n      \"direction\": \"DESC\"\n    }\n  ],\n  \"filters\": [\n    {\n      \"field\": \"actionType\",\n      \"operator\": \"EQUAL\",\n      \"value\": \"EXPORT\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/dropdown",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"dropdown"
+							]
+						},
+						"description": "Get inventory logs dropdown list using BaseController /dropdown endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Inventory Log (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"1"
+							]
+						},
+						"description": "Delete inventory log by ID using BaseController /{id} endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Multiple Inventory Logs (BaseController)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[1, 2, 3]"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/inventory-logs/deleteByIds",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"inventory-logs",
+								"deleteByIds"
+							]
+						},
+						"description": "Delete multiple inventory logs by IDs using BaseController /deleteByIds endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "Inventory log management endpoints using BaseController"
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Application Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Check application health status"
+					},
+					"response": []
+				},
+				{
+					"name": "Application Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"actuator",
+								"info"
+							]
+						},
+						"description": "Get application information"
+					},
+					"response": []
+				}
+			],
+			"description": "Health check and monitoring endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3333",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "productId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "invoiceId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "paymentId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "promotionId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "logId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "parentId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

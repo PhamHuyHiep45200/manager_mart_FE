@@ -13,6 +13,8 @@ import Pagination from "../../common/Pagination";
 import { Promotion, PromotionFormData } from "./types";
 import { usePromotions, useCreatePromotion } from '../../../hooks/usePromotions';
 import { Promotion as APIPromotion } from '../../../services/promotionService';
+import { showToast } from '../../../utils/toast';
+import { useDebounce } from '../../../hooks/useDebounce';
 
 export default function PromotionTable() {
   // State management
@@ -27,20 +29,40 @@ export default function PromotionTable() {
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
   // React Query hooks
-  const { data: promotionsData, isLoading, error, refetch } = usePromotions();
+  const searchRequest = {
+    page: currentPage, // API sử dụng 0-based pagination
+    size: itemsPerPage,
+    sortField: [
+      {
+        fieldName: 'startDate',
+        sort: 'DESC' as const
+      }
+    ],
+    lsCondition: debouncedSearchTerm ? [
+      {
+        property: 'code',
+        propertyType: 'string' as const,
+        operator: 'CONTAINS' as const,
+        value: debouncedSearchTerm
+      }
+    ] : []
+  };
+
+  const { data: promotionsData, isLoading, error, refetch } = usePromotions(searchRequest);
   const createPromotionMutation = useCreatePromotion();
 
   // Convert API data to Promotion format
   const promotions: Promotion[] = useMemo(() => {
-    if (!promotionsData) return [];
+    if (!promotionsData?.data?.content) return [];
     
-    return promotionsData.map((promo: APIPromotion) => ({
+    return promotionsData.data.content.map((promo: APIPromotion) => ({
       promo_id: promo.id || 0,
       code: promo.code,
       discount_percent: promo.discountPercent,
@@ -51,27 +73,9 @@ export default function PromotionTable() {
     }));
   }, [promotionsData]);
 
-  // Filtered promotions based on search
-  const filteredPromotions = useMemo(() => {
-    if (!searchTerm.trim()) return promotions;
-    
-    return promotions.filter(promotion =>
-      promotion.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promotion.status.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [promotions, searchTerm]);
-
-  // Calculate pagination for filtered data
-  const totalItems = filteredPromotions.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentPromotions = filteredPromotions.slice(startIndex, endIndex);
-
-  // Reset to first page when search changes
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  // Pagination data
+  const totalItems = promotionsData?.data?.totalElements || 0;
+  const totalPages = promotionsData?.data?.totalPages || 0;
 
   // Function to format date
   const formatDate = (dateString: string) => {
@@ -118,13 +122,19 @@ export default function PromotionTable() {
           status: promotionData.status
         };
         await createPromotionMutation.mutateAsync(apiPromotionData);
+        
+        // Refetch promotions data sau khi tạo thành công
+        await refetch();
+        showToast.success('Thêm mã giảm giá thành công!');
       } else {
         // TODO: Implement update when API is available
         console.log('Update functionality not implemented yet');
+        showToast.error('Chức năng cập nhật chưa được triển khai!');
       }
       setIsFormPopupOpen(false);
     } catch (error) {
       console.error('Error saving promotion:', error);
+      showToast.error('Có lỗi xảy ra khi lưu mã giảm giá!');
     }
   };
 
@@ -141,12 +151,14 @@ export default function PromotionTable() {
   const handleConfirmDelete = () => {
     // TODO: Implement delete API when available
     console.log('Delete functionality not implemented yet');
+    showToast.error('Chức năng xóa chưa được triển khai!');
     setIsConfirmPopupOpen(false);
   };
 
   // Search handler
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset về trang đầu khi search
   };
 
   // Pagination handlers
@@ -217,9 +229,9 @@ export default function PromotionTable() {
       </div>
 
       {/* Search Results Info */}
-      {searchTerm && (
+      {debouncedSearchTerm && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Tìm thấy {filteredPromotions.length} mã giảm giá cho từ khóa "{searchTerm}"
+          Tìm thấy {totalItems} mã giảm giá cho từ khóa "{debouncedSearchTerm}"
         </div>
       )}
 
@@ -270,8 +282,8 @@ export default function PromotionTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {currentPromotions.length > 0 ? (
-                currentPromotions.map((promotion) => (
+              {promotions.length > 0 ? (
+                promotions.map((promotion) => (
                   <TableRow key={promotion.promo_id}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -341,9 +353,14 @@ export default function PromotionTable() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
-                    {searchTerm ? 'Không tìm thấy mã giảm giá nào phù hợp' : 'Chưa có mã giảm giá nào'}
+                  <TableCell className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                    {debouncedSearchTerm ? 'Không tìm thấy mã giảm giá nào phù hợp' : 'Chưa có mã giảm giá nào'}
                   </TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -351,7 +368,7 @@ export default function PromotionTable() {
         </div>
         
         {/* Pagination */}
-        {filteredPromotions.length > 0 && (
+        {promotions.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

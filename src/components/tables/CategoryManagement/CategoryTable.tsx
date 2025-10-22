@@ -40,15 +40,15 @@ export default function CategoryTable() {
     if (!categoryTreeData) return [];
     
     const convertCategory = (cat: APICategory, level: number = 0): CategoryWithUI => ({
-      category_id: cat.id || 0,
+      categoryId: cat.categoryId,
       name: cat.name,
       description: cat.description,
-      parent_id: cat.parentId,
-      created_at: new Date().toISOString(), // API không trả về created_at
+      parentId: cat.parentId,
+      parentName: cat.parentName,
       children: cat.children?.map(child => convertCategory(child, level + 1)),
       level,
-      isExpanded: expandedCategories.has(cat.id || 0),
-      isSelected: selectedParentId === cat.id
+      isExpanded: expandedCategories.has(cat.categoryId),
+      isSelected: selectedParentId === cat.categoryId
     });
 
     return categoryTreeData.map(cat => convertCategory(cat));
@@ -82,14 +82,6 @@ export default function CategoryTable() {
     );
   }, [flattenedCategories, searchTerm]);
 
-  // Function to format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  };
 
   // Handle expand/collapse category
   const handleToggleExpand = (categoryId: number) => {
@@ -131,21 +123,24 @@ export default function CategoryTable() {
   const handleFormSubmit = async (categoryData: CategoryFormData) => {
     try {
       if (formMode === 'add') {
-        const apiCategoryData: APICategory = {
+        const apiCategoryData: Omit<APICategory, 'categoryId'> = {
           name: categoryData.name,
           description: categoryData.description,
           parentId: selectedParentId || undefined
         };
         await createCategoryMutation.mutateAsync(apiCategoryData);
       } else if (selectedCategory) {
-        const apiCategoryData: Partial<APICategory> & { id: number } = {
-          id: selectedCategory.category_id,
+        const apiCategoryData: Partial<APICategory> & { categoryId: number } = {
+          categoryId: selectedCategory.categoryId,
           name: categoryData.name,
           description: categoryData.description,
-          parentId: categoryData.parent_id
+          parentId: categoryData.parentId
         };
         await updateCategoryMutation.mutateAsync(apiCategoryData);
       }
+      
+      // Refetch category tree data sau khi tạo/cập nhật thành công
+      await refetch();
       setIsFormPopupOpen(false);
     } catch (error) {
       console.error('Error saving category:', error);
@@ -165,7 +160,10 @@ export default function CategoryTable() {
   const handleConfirmDelete = async () => {
     if (confirmAction) {
       try {
-        await deleteCategoryMutation.mutateAsync(confirmAction.category.category_id);
+        await deleteCategoryMutation.mutateAsync(confirmAction.category.categoryId);
+        
+        // Refetch category tree data sau khi xóa thành công
+        await refetch();
         setIsConfirmPopupOpen(false);
       } catch (error) {
         console.error('Error deleting category:', error);
@@ -276,12 +274,6 @@ export default function CategoryTable() {
                   isHeader
                   className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
                 >
-                  Ngày tạo
-                </TableCell>
-                <TableCell
-                  isHeader
-                  className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
-                >
                   Thao tác
                 </TableCell>
               </TableRow>
@@ -291,10 +283,10 @@ export default function CategoryTable() {
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
               {filteredCategories.length > 0 ? (
                 filteredCategories.map((category) => (
-                  <TableRow key={category.category_id} className={category.level && category.level > 0 ? 'bg-gray-50 dark:bg-gray-800/30' : ''}>
+                  <TableRow key={category.categoryId} className={category.level && category.level > 0 ? 'bg-gray-50 dark:bg-gray-800/30' : ''}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                        #{category.category_id}
+                        #{category.categoryId}
                       </span>
                     </TableCell>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
@@ -309,7 +301,7 @@ export default function CategoryTable() {
                         {/* Expand/Collapse button cho parent categories */}
                         {category.children && category.children.length > 0 && (
                           <button
-                            onClick={() => handleToggleExpand(category.category_id)}
+                            onClick={() => handleToggleExpand(category.categoryId)}
                             className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           >
                             <svg 
@@ -334,9 +326,9 @@ export default function CategoryTable() {
                           <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                             {category.name}
                           </span>
-                          {category.parent_id && (
+                          {category.parentId && (
                             <span className="block text-xs text-gray-500 dark:text-gray-400">
-                              Danh mục con
+                              Danh mục con của {category.parentName || 'Unknown'}
                             </span>
                           )}
                         </div>
@@ -358,14 +350,11 @@ export default function CategoryTable() {
                       </div>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {formatDate(category.created_at || '')}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <div className="flex items-center gap-2">
                         {/* Add child button cho parent categories */}
                         {category.level === 0 && (
                           <button 
-                            onClick={() => handleAddChildCategory(category.category_id)}
+                            onClick={() => handleAddChildCategory(category.categoryId)}
                             className="text-green-500 hover:text-green-600 transition-colors"
                             title="Thêm danh mục con"
                           >
@@ -403,7 +392,6 @@ export default function CategoryTable() {
                   <TableCell className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                     {searchTerm ? 'Không tìm thấy danh mục nào phù hợp' : 'Chưa có danh mục nào'}
                   </TableCell>
-                  <TableCell>{''}</TableCell>
                   <TableCell>{''}</TableCell>
                   <TableCell>{''}</TableCell>
                   <TableCell>{''}</TableCell>

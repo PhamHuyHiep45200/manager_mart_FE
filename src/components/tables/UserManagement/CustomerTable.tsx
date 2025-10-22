@@ -7,9 +7,12 @@ import {
 } from "../../ui/table";
 import Badge from "../../ui/badge/Badge";
 import Pagination from "../../common/Pagination";
+import ConfirmPopup from "./ConfirmPopup";
 import { useState } from 'react';
-import { useUsersByRole } from '../../../hooks/useUsers';
+import { useUsersByRole, useDeleteUser } from '../../../hooks/useUsers';
 import { User } from '../../../services/userService';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { showToast } from '../../../utils/toast';
 
 // Interface cho khách hàng dựa trên database schema
 interface Customer {
@@ -29,24 +32,45 @@ export default function CustomerTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete';
+    customer: Customer;
+  } | null>(null);
+
+  // Debounce search term để tối ưu hiệu suất
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // React Query hooks
   const searchRequest = {
     page: currentPage - 1, // API sử dụng 0-based pagination
     size: itemsPerPage,
-    sorts: [],
-    filters: searchTerm ? [{ field: 'fullName', operator: 'contains', value: searchTerm }] : []
+    sortField: [
+      {
+        fieldName: 'createdDate',
+        sort: 'DESC' as const
+      }
+    ],
+    lsCondition: debouncedSearchTerm ? [
+      {
+        property: 'fullName',
+        propertyType: 'string' as const,
+        operator: 'CONTAINS' as const,
+        value: debouncedSearchTerm
+      }
+    ] : []
   };
 
   const { data: customersData, isLoading, error, refetch } = useUsersByRole('CUSTOMER', searchRequest);
+  const deleteUserMutation = useDeleteUser();
 
   // Convert API data to Customer format
-  const customers: Customer[] = customersData?.content?.map((user: User) => ({
+  const customers: Customer[] = customersData?.data?.content?.map((user: User) => ({
     user_id: user.id || 0,
     full_name: user.fullName,
     email: user.email,
     phone: user.phone,
-    address: user.address,
+    address: user.address || '',
     role: 'CUSTOMER' as const,
     created_at: new Date().toISOString(), // API không trả về created_at, sử dụng thời gian hiện tại
     total_orders: Math.floor(Math.random() * 30) + 1, // Mock data cho demo
@@ -54,8 +78,8 @@ export default function CustomerTable() {
   })) || [];
 
   // Pagination data
-  const totalItems = customersData?.totalElements || 0;
-  const totalPages = customersData?.totalPages || 0;
+  const totalItems = customersData?.data?.totalElements || 0;
+  const totalPages = customersData?.data?.totalPages || 0;
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -67,10 +91,33 @@ export default function CustomerTable() {
     setCurrentPage(1); // Reset to first page when changing items per page
   };
 
-  // Handle search
+  // Handle search - chỉ cập nhật state local, debounce sẽ xử lý API call
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Handle delete customer
+  const handleDeleteCustomer = (customer: Customer) => {
+    setConfirmAction({
+      type: 'delete',
+      customer
+    });
+    setIsConfirmPopupOpen(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (confirmAction?.customer) {
+      try {
+        await deleteUserMutation.mutateAsync(confirmAction.customer.user_id);
+        showToast.success('Xóa khách hàng thành công!');
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+        showToast.error('Có lỗi xảy ra khi xóa khách hàng!');
+      }
+    }
+    setIsConfirmPopupOpen(false);
   };
 
   // Loading state
@@ -136,7 +183,7 @@ export default function CustomerTable() {
             placeholder="Tìm kiếm khách hàng..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           />
           <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -259,7 +306,7 @@ export default function CustomerTable() {
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <div className="flex items-center gap-2">
-                      <button className="text-primary hover:text-primary/80 transition-colors" title="Xem chi tiết">
+                      {/* <button className="text-primary hover:text-primary/80 transition-colors" title="Xem chi tiết">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -269,8 +316,12 @@ export default function CustomerTable() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                      </button>
-                      <button className="text-red-500 hover:text-red-600 transition-colors" title="Xóa">
+                      </button> */}
+                      <button 
+                        onClick={() => handleDeleteCustomer(customer)}
+                        className="text-red-500 hover:text-red-600 transition-colors" 
+                        title="Xóa khách hàng"
+                      >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
@@ -295,6 +346,17 @@ export default function CustomerTable() {
         showItemsPerPage={true}
       />
       </div>
+
+      {/* Confirm Popup */}
+      <ConfirmPopup
+        isOpen={isConfirmPopupOpen}
+        onClose={() => setIsConfirmPopupOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Xóa khách hàng"
+        message={`Bạn có chắc chắn muốn xóa khách hàng "${confirmAction?.customer.full_name}"? Hành động này không thể hoàn tác.`}
+        confirmText="Xóa khách hàng"
+        type="danger"
+      />
     </>
   );
 }

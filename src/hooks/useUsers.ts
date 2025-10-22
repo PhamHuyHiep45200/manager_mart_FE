@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userService, User, SearchRequest, SearchResponse } from '../services/userService';
+import { userService, User, SearchRequest } from '../services/userService';
 
 // Query keys cho user API
 export const userKeys = {
@@ -39,8 +39,8 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (userData: User) => userService.create(userData),
     onSuccess: () => {
-      // Invalidate và refetch user lists
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate tất cả user queries để đảm bảo refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
   });
 };
@@ -52,8 +52,8 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: (userData: Partial<User> & { id: number }) => userService.update(userData),
     onSuccess: (_, variables) => {
-      // Invalidate và refetch user lists
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate tất cả user queries để đảm bảo refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
       // Invalidate user detail nếu có
       queryClient.invalidateQueries({ queryKey: userKeys.detail(variables.id) });
     },
@@ -67,8 +67,8 @@ export const useSaveUser = () => {
   return useMutation({
     mutationFn: (userData: User) => userService.save(userData),
     onSuccess: () => {
-      // Invalidate và refetch user lists
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate tất cả user queries để đảm bảo refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
   });
 };
@@ -80,8 +80,8 @@ export const useUpdateUsersList = () => {
   return useMutation({
     mutationFn: (usersData: Array<Partial<User> & { id: number }>) => userService.updateList(usersData),
     onSuccess: () => {
-      // Invalidate và refetch user lists
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate tất cả user queries để đảm bảo refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
   });
 };
@@ -93,8 +93,8 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: (id: number) => userService.deleteById(id),
     onSuccess: () => {
-      // Invalidate và refetch user lists
-      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate tất cả user queries để đảm bảo refetch
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
   });
 };
@@ -104,14 +104,27 @@ export const useUsersByRole = (role: 'ADMIN' | 'STAFF' | 'CUSTOMER', searchReque
   return useQuery({
     queryKey: [...userKeys.list(searchRequest), 'role', role],
     queryFn: async () => {
-      const response = await userService.search(searchRequest);
-      // Filter users by role
-      const filteredUsers = response.content.filter(user => user.role === role);
-      return {
-        ...response,
-        content: filteredUsers,
-        totalElements: filteredUsers.length,
-      } as SearchResponse<User>;
+      // Tạo search request với role filter
+      const roleSearchRequest: SearchRequest = {
+        ...searchRequest,
+        lsCondition: [
+          ...(searchRequest.lsCondition || []),
+          {
+            property: 'role',
+            propertyType: 'string',
+            operator: 'EQUAL',
+            value: role
+          }
+        ],
+        sortField: searchRequest.sortField || [
+          {
+            fieldName: 'createdDate',
+            sort: 'DESC'
+          }
+        ]
+      };
+      
+      return await userService.search(roleSearchRequest);
     },
     staleTime: 0, // Luôn fetch data mới nhất cho admin
     refetchOnWindowFocus: true,

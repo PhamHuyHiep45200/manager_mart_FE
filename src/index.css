@@ -36,7 +36,7 @@ layer(base);
   --text-theme-xs: 12px;
   --text-theme-xs--line-height: 18px;
 
-  --color-current: currentColor;
+  --color-current: #349D4C; /* Màu xanh lá cây mặc định */
   --color-transparent: transparent;
   --color-white: #ffffff;
   --color-black: #101828;
@@ -137,6 +137,9 @@ layer(base);
 
   --color-theme-purple-500: #7a5af8;
 
+  --color-primary: #349D4C;
+
+
   --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),
     0px 2px 4px -2px rgba(16, 24, 40, 0.06);
   --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
@@ -179,7 +182,16 @@ layer(base);
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
+    border-color: var(--color-gray-200, var(--color-current));
+  }
+  
+  /* Override currentColor cho các element cụ thể */
+  .current-color-primary {
+    color: var(--color-primary);
+  }
+  
+  .current-color-brand {
+    color: var(--color-brand-500);
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
@@ -195,7 +207,7 @@ layer(base);
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-primary/10 text-primary dark:bg-primary/[0.12] dark:text-primary;
 }
 
 @utility menu-item-inactive {
@@ -207,7 +219,7 @@ layer(base);
 }
 
 @utility menu-item-icon-active {
-  @apply text-brand-500 dark:text-brand-400;
+  @apply text-primary dark:text-primary;
 }
 
 @utility menu-item-icon-size {
@@ -225,7 +237,7 @@ layer(base);
 }
 
 @utility menu-item-arrow-active {
-  @apply rotate-180 text-brand-500 dark:text-brand-400;
+  @apply rotate-180 text-primary dark:text-primary;
 }
 
 @utility menu-item-arrow-inactive {
@@ -237,7 +249,7 @@ layer(base);
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+  @apply bg-primary/10 text-primary dark:bg-primary/[0.12] dark:text-primary;
 }
 
 @utility menu-dropdown-item-inactive {
@@ -245,15 +257,15 @@ layer(base);
 }
 
 @utility menu-dropdown-badge {
-  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-brand-500 dark:text-brand-400;
+  @apply block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase text-primary dark:text-primary;
 }
 
 @utility menu-dropdown-badge-active {
-  @apply bg-brand-100 dark:bg-brand-500/20;
+  @apply bg-primary/20 dark:bg-primary/20;
 }
 
 @utility menu-dropdown-badge-inactive {
-  @apply bg-brand-50 group-hover:bg-brand-100 dark:bg-brand-500/15 dark:group-hover:bg-brand-500/20;
+  @apply bg-primary/5 group-hover:bg-primary/10 dark:bg-primary/10 dark:group-hover:bg-primary/20;
 }
 @utility no-scrollbar {
   /* Chrome, Safari and Opera */
@@ -275,6 +287,22 @@ layer(base);
   &::-webkit-scrollbar-thumb {
     @apply bg-gray-200 rounded-full dark:bg-gray-700;
   }
+}
+
+@utility current-color-primary {
+  color: var(--color-primary);
+}
+
+@utility current-color-brand {
+  color: var(--color-brand-500);
+}
+
+@utility current-color-success {
+  color: var(--color-success-500);
+}
+
+@utility current-color-error {
+  color: var(--color-error-500);
 }
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #344054;

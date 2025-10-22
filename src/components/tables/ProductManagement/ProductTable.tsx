@@ -11,161 +11,13 @@ import ProductFormPopup from "./ProductFormPopup";
 import ProductDetailPopup from "./ProductDetailPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
 import Pagination from "../../common/Pagination";
-import { Product, ProductFormData, Category } from "./types";
-
-// Mock data cho danh mục
-const mockCategories: Category[] = [
-  { category_id: 1, name: "Thực phẩm tươi sống" },
-  { category_id: 2, name: "Đồ uống" },
-  { category_id: 3, name: "Bánh kẹo" },
-  { category_id: 4, name: "Sản phẩm từ sữa" },
-  { category_id: 5, name: "Đồ gia dụng" },
-  { category_id: 6, name: "Mỹ phẩm" },
-  { category_id: 7, name: "Đồ chơi trẻ em" },
-  { category_id: 8, name: "Văn phòng phẩm" },
-  { category_id: 9, name: "Thực phẩm đóng hộp" },
-  { category_id: 10, name: "Đồ điện tử" }
-];
-
-// Mock data cho sản phẩm
-const initialProductData: Product[] = [
-  {
-    product_id: 1,
-    category_id: 1,
-    name: "Cà chua tươi",
-    description: "Cà chua tươi ngon, được trồng theo phương pháp hữu cơ, giàu vitamin C và chất chống oxy hóa",
-    price: 25000,
-    stock: 50,
-    image_url: "https://images.unsplash.com/photo-1546470427-227ae4b3b4b4?w=400",
-    created_at: "2024-01-15T08:30:00Z",
-    category_name: "Thực phẩm tươi sống"
-  },
-  {
-    product_id: 2,
-    category_id: 2,
-    name: "Nước suối Lavie 500ml",
-    description: "Nước suối tinh khiết, đóng chai theo tiêu chuẩn quốc tế, phù hợp cho mọi lứa tuổi",
-    price: 8000,
-    stock: 200,
-    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    created_at: "2024-01-20T09:15:00Z",
-    category_name: "Đồ uống"
-  },
-  {
-    product_id: 3,
-    category_id: 3,
-    name: "Kẹo dẻo Haribo",
-    description: "Kẹo dẻo trái cây thơm ngon, không chứa chất bảo quản, phù hợp cho trẻ em",
-    price: 35000,
-    stock: 15,
-    image_url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400",
-    created_at: "2024-02-01T10:00:00Z",
-    category_name: "Bánh kẹo"
-  },
-  {
-    product_id: 4,
-    category_id: 4,
-    name: "Sữa tươi Vinamilk 1L",
-    description: "Sữa tươi nguyên chất, giàu canxi và vitamin D, tốt cho sự phát triển của trẻ em",
-    price: 28000,
-    stock: 0,
-    image_url: "https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400",
-    created_at: "2024-02-10T11:30:00Z",
-    category_name: "Sản phẩm từ sữa"
-  },
-  {
-    product_id: 5,
-    category_id: 5,
-    name: "Khăn giấy Kleenex",
-    description: "Khăn giấy mềm mại, thấm hút tốt, không gây kích ứng da, tiện lợi cho gia đình",
-    price: 45000,
-    stock: 8,
-    image_url: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400",
-    created_at: "2024-02-15T14:45:00Z",
-    category_name: "Đồ gia dụng"
-  },
-  {
-    product_id: 6,
-    category_id: 6,
-    name: "Kem dưỡng da Nivea",
-    description: "Kem dưỡng da chuyên sâu, cung cấp độ ẩm cho da, phù hợp cho mọi loại da",
-    price: 120000,
-    stock: 25,
-    image_url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400",
-    created_at: "2024-03-01T16:20:00Z",
-    category_name: "Mỹ phẩm"
-  },
-  {
-    product_id: 7,
-    category_id: 7,
-    name: "Xe đồ chơi điều khiển",
-    description: "Xe đồ chơi điều khiển từ xa, có đèn và âm thanh, phù hợp cho trẻ từ 3 tuổi trở lên",
-    price: 250000,
-    stock: 12,
-    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    created_at: "2024-03-10T09:30:00Z",
-    category_name: "Đồ chơi trẻ em"
-  },
-  {
-    product_id: 8,
-    category_id: 8,
-    name: "Bút bi Pilot",
-    description: "Bút bi chất lượng cao, mực đen đậm, viết mượt mà, phù hợp cho học sinh và nhân viên văn phòng",
-    price: 15000,
-    stock: 100,
-    image_url: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400",
-    created_at: "2024-03-20T11:45:00Z",
-    category_name: "Văn phòng phẩm"
-  },
-  {
-    product_id: 9,
-    category_id: 9,
-    name: "Cá hộp Rio Mare",
-    description: "Cá ngừ đóng hộp chất lượng cao, giàu protein và omega-3, tiện lợi cho bữa ăn",
-    price: 65000,
-    stock: 30,
-    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    created_at: "2024-04-01T14:15:00Z",
-    category_name: "Thực phẩm đóng hộp"
-  },
-  {
-    product_id: 10,
-    category_id: 10,
-    name: "Cáp sạc iPhone",
-    description: "Cáp sạc Lightning chính hãng, tương thích với iPhone và iPad, sạc nhanh và an toàn",
-    price: 180000,
-    stock: 5,
-    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    created_at: "2024-04-10T08:00:00Z",
-    category_name: "Đồ điện tử"
-  },
-  {
-    product_id: 11,
-    category_id: 1,
-    name: "Rau xà lách",
-    description: "Rau xà lách tươi ngon, giàu chất xơ và vitamin, phù hợp cho salad và các món ăn healthy",
-    price: 18000,
-    stock: 40,
-    image_url: "https://images.unsplash.com/photo-1546470427-227ae4b3b4b4?w=400",
-    created_at: "2024-04-20T10:30:00Z",
-    category_name: "Thực phẩm tươi sống"
-  },
-  {
-    product_id: 12,
-    category_id: 2,
-    name: "Coca Cola 330ml",
-    description: "Nước ngọt có ga Coca Cola, hương vị đặc trưng, giải khát hiệu quả",
-    price: 12000,
-    stock: 150,
-    image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    created_at: "2024-05-01T13:20:00Z",
-    category_name: "Đồ uống"
-  }
-];
+import { Product, ProductFormData } from "./types";
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../../../hooks/useProducts';
+import { Product as APIProduct } from '../../../services/productService';
+import { useDebounce } from '../../../hooks/useDebounce';
 
 export default function ProductTable() {
   // State management
-  const [products, setProducts] = useState<Product[]>(initialProductData);
   const [isFormPopupOpen, setIsFormPopupOpen] = useState(false);
   const [isDetailPopupOpen, setIsDetailPopupOpen] = useState(false);
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
@@ -183,29 +35,54 @@ export default function ProductTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  // Filtered products based on search
-  const filteredProducts = useMemo(() => {
-    if (!searchTerm.trim()) return products;
+  // Debounce search term để tối ưu hiệu suất
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // React Query hooks
+  const searchRequest = {
+    page: currentPage - 1, // API sử dụng 0-based pagination
+    size: itemsPerPage,
+    sortField: [
+      {
+        fieldName: 'name',
+        sort: 'ASC' as const
+      }
+    ],
+    lsCondition: debouncedSearchTerm ? [
+      {
+        property: 'name',
+        propertyType: 'string' as const,
+        operator: 'CONTAINS' as const,
+        value: debouncedSearchTerm
+      }
+    ] : []
+  };
+
+  const { data: productsData, isLoading, error, refetch } = useProducts(searchRequest);
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
+
+  // Convert API data to Product format
+  const products: Product[] = useMemo(() => {
+    if (!productsData?.data?.content) return [];
     
-    return products.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.product_id.toString().includes(searchTerm)
-    );
-  }, [products, searchTerm]);
+    return productsData.data.content.map((product: APIProduct) => ({
+      product_id: product.id || 0,
+      category_id: product.categoryId,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      image_url: product.imageUrl,
+      created_at: product.createdAt || new Date().toISOString(),
+      category_name: 'Unknown' // Sẽ được cập nhật từ API response nếu có
+    }));
+  }, [productsData]);
 
-  // Calculate pagination for filtered data
-  const totalItems = filteredProducts.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
-
-  // Reset to first page when search changes
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
+  // Pagination data
+  const totalItems = productsData?.data?.totalElements || 0;
+  const totalPages = productsData?.data?.totalPages || 0;
 
   // Function to format currency
   const formatCurrency = (amount: number) => {
@@ -250,31 +127,36 @@ export default function ProductTable() {
   };
 
   // Handle form submit
-  const handleFormSubmit = (productData: ProductFormData) => {
-    if (formMode === 'add') {
-      // Generate new ID for new product
-      const newId = Math.max(...products.map(p => p.product_id)) + 1;
-      const category = mockCategories.find(c => c.category_id === productData.category_id);
-      const newProduct: Product = {
-        ...productData,
-        product_id: newId,
-        created_at: new Date().toISOString(),
-        category_name: category?.name
-      };
-      setProducts(prev => [...prev, newProduct]);
-    } else {
-      // Update existing product
-      const category = mockCategories.find(c => c.category_id === productData.category_id);
-      setProducts(prev => prev.map(prod => 
-        prod.product_id === selectedProduct?.product_id 
-          ? { 
-              ...prod, 
-              ...productData, 
-              updated_at: new Date().toISOString(),
-              category_name: category?.name
-            }
-          : prod
-      ));
+  const handleFormSubmit = async (productData: ProductFormData) => {
+    try {
+      if (formMode === 'add') {
+        const apiProductData: APIProduct = {
+          categoryId: productData.category_id,
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          stock: productData.stock,
+          imageUrl: productData.image_url
+        };
+        await createProductMutation.mutateAsync(apiProductData);
+      } else if (selectedProduct) {
+        const apiProductData: Partial<APIProduct> & { id: number } = {
+          id: selectedProduct.product_id,
+          categoryId: productData.category_id,
+          name: productData.name,
+          description: productData.description,
+          price: productData.price,
+          stock: productData.stock,
+          imageUrl: productData.image_url
+        };
+        await updateProductMutation.mutateAsync(apiProductData);
+      }
+      
+      // Refetch products data sau khi tạo/cập nhật thành công
+      await refetch();
+      setIsFormPopupOpen(false);
+    } catch (error) {
+      console.error('Error saving product:', error);
     }
   };
 
@@ -288,9 +170,17 @@ export default function ProductTable() {
   };
 
   // Handle confirm delete
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (confirmAction) {
-      setProducts(prev => prev.filter(prod => prod.product_id !== confirmAction.product.product_id));
+      try {
+        await deleteProductMutation.mutateAsync(confirmAction.product.product_id);
+        
+        // Refetch products data sau khi xóa thành công
+        await refetch();
+        setIsConfirmPopupOpen(false);
+      } catch (error) {
+        console.error('Error deleting product:', error);
+      }
     }
   };
 
@@ -304,10 +194,36 @@ export default function ProductTable() {
     setCurrentPage(1);
   };
 
-  // Search handler
+  // Search handler - chỉ cập nhật state local, debounce sẽ xử lý API call
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-gray-600">Đang tải...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-500 mb-2">Có lỗi xảy ra khi tải dữ liệu</div>
+        <button 
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -395,8 +311,8 @@ export default function ProductTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {currentProducts.length > 0 ? (
-                currentProducts.map((product) => (
+              {products.length > 0 ? (
+                products.map((product) => (
                   <TableRow key={product.product_id}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -487,9 +403,14 @@ export default function ProductTable() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <TableCell className="px-5 py-8 text-center text-gray-500 dark:text-gray-400">
                     {searchTerm ? 'Không tìm thấy sản phẩm nào phù hợp' : 'Chưa có sản phẩm nào'}
                   </TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
+                  <TableCell>{''}</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -497,7 +418,7 @@ export default function ProductTable() {
         </div>
         
         {/* Pagination */}
-        {totalItems > 0 && (
+        {products.length > 0 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -517,7 +438,6 @@ export default function ProductTable() {
         onSubmit={handleFormSubmit}
         product={selectedProduct}
         mode={formMode}
-        categories={mockCategories}
       />
 
       {/* Product Detail Popup */}
