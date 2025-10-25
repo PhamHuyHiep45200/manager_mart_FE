@@ -28,7 +28,7 @@ export default function CategoryFormPopup({
     defaultValues: {
       name: '',
       description: '',
-      parent_id: undefined
+      parentId: undefined
     },
     mode: 'onChange'
   });
@@ -38,16 +38,16 @@ export default function CategoryFormPopup({
     if (isOpen) {
       if (mode === 'edit' && category) {
         reset({
-          category_id: category.category_id,
+          id: category.id,
           name: category.name,
           description: category.description,
-          parent_id: category.parent_id
+          parentId: category.parentId
         });
       } else {
         reset({
           name: '',
           description: '',
-          parent_id: parentId || undefined
+          parentId: parentId || undefined
         });
       }
     }

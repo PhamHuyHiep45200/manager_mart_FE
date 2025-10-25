@@ -13,6 +13,7 @@ export interface User {
   address?: string | null;
   role: 'CUSTOMER' | 'EMPLOYEE';
   points?: number;
+  createdDate?: number;
 }
 
 // Định nghĩa interface cho Login Request

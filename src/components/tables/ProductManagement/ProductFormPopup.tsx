@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { ProductFormData, Category } from "./types";
+import { ProductFormData } from "./types";
+import { Category } from "../../../services/categoryService";
 import {
   useRootCategories,
   useCategoryChildren,
 } from "../../../hooks/useCategories";
+import UploadComponent from "../../common/UploadComponent";
+import { FileInfo } from "../../../services/uploadService";
 
 interface ProductFormPopupProps {
   isOpen: boolean;
@@ -24,6 +27,10 @@ export default function ProductFormPopup({
   // State để quản lý category parent và child
   const [selectedParentId, setSelectedParentId] = useState<number | null>(null);
   const [childCategories, setChildCategories] = useState<Category[]>([]);
+  
+  // State để quản lý uploaded image
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
+  const [isImageUploaded, setIsImageUploaded] = useState<boolean>(false);
 
   // Hooks để lấy dữ liệu categories
   const { data: rootCategories = [], isLoading: isLoadingRoots } =
@@ -77,7 +84,7 @@ export default function ProductFormPopup({
     } else {
       setChildCategories([]);
     }
-  }, [fetchedChildCategories]);
+  }, [fetchedChildCategories, childCategories]);
 
   // Reset form when popup opens/closes or product changes
   useEffect(() => {
@@ -93,6 +100,14 @@ export default function ProductFormPopup({
           stock: product.stock,
           image_url: product.image_url || "",
         });
+        // Set uploaded image state nếu có image_url
+        if (product.image_url) {
+          setUploadedImageUrl(product.image_url);
+          setIsImageUploaded(true);
+        } else {
+          setUploadedImageUrl("");
+          setIsImageUploaded(false);
+        }
       } else {
         reset({
           parent_category_id: 0,
@@ -103,6 +118,9 @@ export default function ProductFormPopup({
           stock: 0,
           image_url: "",
         });
+        // Reset uploaded image state
+        setUploadedImageUrl("");
+        setIsImageUploaded(false);
       }
     }
   }, [isOpen, product, mode, reset]);
@@ -148,9 +166,11 @@ export default function ProductFormPopup({
       },
     },
     image_url: {
-      pattern: {
-        value: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i,
-        message: "URL hình ảnh không hợp lệ",
+      validate: (value: string | undefined) => {
+        // Cho phép empty string hoặc URL hợp lệ
+        if (!value || value === "") return true;
+        const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i;
+        return urlPattern.test(value) || "URL hình ảnh không hợp lệ";
       },
     },
   };
@@ -158,6 +178,28 @@ export default function ProductFormPopup({
   const onFormSubmit = (data: ProductFormData) => {
     onSubmit(data);
     onClose();
+  };
+
+  // Handler cho upload image success
+  const handleImageUploadSuccess = (fileInfo: FileInfo) => {
+    setUploadedImageUrl(fileInfo.url);
+    setIsImageUploaded(true);
+    setValue("image_url", fileInfo.url);
+  };
+
+  // Handler cho upload image error
+  const handleImageUploadError = (error: string) => {
+    console.error("Upload image error:", error);
+    setUploadedImageUrl("");
+    setIsImageUploaded(false);
+    setValue("image_url", "");
+  };
+
+  // Handler để xóa uploaded image
+  const handleRemoveImage = () => {
+    setUploadedImageUrl("");
+    setIsImageUploaded(false);
+    setValue("image_url", "");
   };
 
   if (!isOpen) return null;
@@ -244,8 +286,8 @@ export default function ProductFormPopup({
                     <option value={0}>Chọn danh mục cha</option>
                     {rootCategories.map((category) => (
                       <option
-                        key={category.categoryId}
-                        value={category.categoryId}
+                        key={category.id}
+                        value={category.id}
                       >
                         {category.name}
                       </option>
@@ -287,8 +329,8 @@ export default function ProductFormPopup({
                     <option value={0}>Chọn danh mục con</option>
                     {childCategories.map((category) => (
                       <option
-                        key={category.categoryId}
-                        value={category.categoryId}
+                        key={category.id}
+                        value={category.id}
                       >
                         {category.name}
                       </option>
@@ -373,11 +415,48 @@ export default function ProductFormPopup({
               )}
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                URL hình ảnh
+                Hình ảnh sản phẩm
               </label>
+              
+              {/* Hiển thị hình ảnh đã upload */}
+              {isImageUploaded && uploadedImageUrl && (
+                <div className="mb-4">
+                  <div className="relative inline-block">
+                    <img
+                      src={uploadedImageUrl}
+                      alt="Product preview"
+                      className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                    ✓ Hình ảnh đã được upload thành công
+                  </p>
+                </div>
+              )}
+              
+              {/* Upload Component */}
+              <UploadComponent
+                category="images"
+                onUploadSuccess={handleImageUploadSuccess}
+                onUploadError={handleImageUploadError}
+                maxFileSize={5} // 5MB cho hình ảnh sản phẩm
+                acceptedTypes="image/*"
+                multiple={false}
+              />
+              
+              {/* Hidden input để lưu URL vào form */}
               <Controller
                 name="image_url"
                 control={control}
@@ -385,16 +464,12 @@ export default function ProductFormPopup({
                 render={({ field }) => (
                   <input
                     {...field}
-                    type="url"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.image_url
-                        ? "border-red-500 dark:border-red-400"
-                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    }`}
-                    placeholder="https://example.com/image.jpg"
+                    type="hidden"
+                    value={uploadedImageUrl}
                   />
                 )}
               />
+              
               {errors.image_url && (
                 <p className="mt-1 text-sm text-red-500">
                   {errors.image_url.message}

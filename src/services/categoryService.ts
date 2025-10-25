@@ -2,7 +2,7 @@ import apiClient from './index';
 
 // Định nghĩa interface cho Category từ API response
 export interface Category {
-  categoryId: number;
+  id: number;
   name: string;
   description: string;
   parentId?: number;
@@ -88,13 +88,13 @@ export const categoryService = {
   },
 
   // Tạo category mới - sử dụng BaseController
-  create: async (categoryData: Omit<Category, 'categoryId'>): Promise<Category> => {
+  create: async (categoryData: Omit<Category, 'id'>): Promise<Category> => {
     const response: CategoryApiResponse = await apiClient.post('/api/categories/create', categoryData);
     return response.data[0];
   },
 
   // Cập nhật category - sử dụng BaseController
-  update: async (categoryData: Partial<Category> & { categoryId: number }): Promise<Category> => {
+  update: async (categoryData: Partial<Category> & { id: number }): Promise<Category> => {
     const response: CategoryApiResponse = await apiClient.put('/api/categories/update', categoryData);
     return response.data[0];
   },

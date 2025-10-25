@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token hết hạn, redirect về login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/signin';
     }
     return Promise.reject(error);
   }
@@ -49,6 +49,7 @@ export { invoiceService } from './invoiceService';
 export { paymentService } from './paymentService';
 export { promotionService } from './promotionService';
 export { inventoryService } from './inventoryService';
+export { uploadService } from './uploadService';
 
 // Export types
 export type { 
@@ -81,5 +82,10 @@ export type {
 export type { 
   InventoryLog 
 } from './inventoryService';
+export type { 
+  UploadRequest, 
+  UploadResponse, 
+  FileInfo 
+} from './uploadService';
 
 export default apiClient;

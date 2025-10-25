@@ -50,7 +50,7 @@ export const useCreateCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (categoryData: Omit<Category, 'categoryId'>) => categoryService.create(categoryData),
+    mutationFn: (categoryData: Omit<Category, 'id'>) => categoryService.create(categoryData),
     onSuccess: () => {
       // Invalidate và refetch tất cả category queries
       queryClient.invalidateQueries({ queryKey: categoryKeys.all });
@@ -63,12 +63,12 @@ export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (categoryData: Partial<Category> & { categoryId: number }) => categoryService.update(categoryData),
+    mutationFn: (categoryData: Partial<Category> & { id: number }) => categoryService.update(categoryData),
     onSuccess: (_, variables) => {
       // Invalidate và refetch tất cả category queries
       queryClient.invalidateQueries({ queryKey: categoryKeys.all });
       // Invalidate category detail nếu có
-      queryClient.invalidateQueries({ queryKey: categoryKeys.detail(variables.categoryId) });
+      queryClient.invalidateQueries({ queryKey: categoryKeys.detail(variables.id) });
     },
   });
 };

@@ -12,9 +12,10 @@ import LoadingMask from "./components/common/LoadingMask";
 import Home from "./pages/Dashboard/Home";
 import UserPage from "./pages/UserPages/UserPage";
 import CategoryPage from "./pages/Category/Category";
-import SupplierPage from "./pages/Supplier/Supplier";
+// import SupplierPage from "./pages/Supplier/Supplier";
 import PromotionPage from "./pages/Promotion/Promotion";
 import ProductPage from "./pages/Product/Product";
+import Support from "./pages/Support";
 import { useEffect } from "react";
 import { useAuthStore } from "./stores/authStore";
 
@@ -106,6 +107,7 @@ export default function App() {
             }>
               <Route index path="/" element={<Home />} />
               <Route path="/profile" element={<UserProfiles />} />
+              <Route path="/support" element={<Support />} />
               <Route path="/user-manager" element={<UserPage />} />
               <Route path="/category-manager" element={<CategoryPage />} />
               {/* <Route path="/supplier-manager" element={<SupplierPage />} /> */}

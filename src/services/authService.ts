@@ -65,7 +65,7 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('auth-storage');
-    window.location.href = '/login';
+    window.location.href = '/signin';
   },
 
   // Kiểm tra token có hợp lệ không

@@ -1,6 +1,6 @@
 // Interface cho Category dựa trên API response structure
 export interface Category {
-  categoryId: number;
+  id: number;
   name: string;
   description: string;
   parentId?: number; // ID của category cha (null nếu là root category)
@@ -11,7 +11,7 @@ export interface Category {
 
 // Interface cho form data (với optional fields)
 export interface CategoryFormData {
-  categoryId?: number;
+  id?: number;
   name: string;
   description: string;
   parentId?: number; // ID của category cha

@@ -1,1 +1,72 @@
-{"code":"00","message":null,"data":[]}
+{
+    "code": "00",
+    "message": null,
+    "data": {
+        "content": [
+            {
+                "pageNumber": null,
+                "pageSize": null,
+                "sortFields": null,
+                "id": 7,
+                "fullName": "Hiep",
+                "email": "hiep@gmail.com",
+                "phone": "0375713278",
+                "address": "1194Lang ha ",
+                "role": "CUSTOMER",
+                "points": 0,
+                "createdDate": 1761063329408
+            },
+            {
+                "pageNumber": null,
+                "pageSize": null,
+                "sortFields": null,
+                "id": 6,
+                "fullName": "John Doe",
+                "email": "+84901234567@customer.winmart.com",
+                "phone": "+84901234567",
+                "address": null,
+                "role": "CUSTOMER",
+                "points": 3009,
+                "createdDate": 1760788534559
+            },
+            {
+                "pageNumber": null,
+                "pageSize": null,
+                "sortFields": null,
+                "id": 1,
+                "fullName": "Nguyen Van A",
+                "email": "nguyenvana@example.com",
+                "phone": "0901234567",
+                "address": "HCM",
+                "role": "CUSTOMER",
+                "points": 0,
+                "createdDate": 1760544503092
+            }
+        ],
+        "pageable": {
+            "pageNumber": 0,
+            "pageSize": 5,
+            "sort": {
+                "unsorted": false,
+                "sorted": true,
+                "empty": false
+            },
+            "offset": 0,
+            "unpaged": false,
+            "paged": true
+        },
+        "totalPages": 1,
+        "totalElements": 3,
+        "last": true,
+        "numberOfElements": 3,
+        "size": 5,
+        "number": 0,
+        "sort": {
+            "unsorted": false,
+            "sorted": true,
+            "empty": false
+        },
+        "first": true,
+        "empty": false
+    }
+}

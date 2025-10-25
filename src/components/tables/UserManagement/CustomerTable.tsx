@@ -10,9 +10,20 @@ import Pagination from "../../common/Pagination";
 import ConfirmPopup from "./ConfirmPopup";
 import { useState } from 'react';
 import { useUsersByRole, useDeleteUser } from '../../../hooks/useUsers';
-import { User } from '../../../services/userService';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { showToast } from '../../../utils/toast';
+
+// Interface cho API response từ backend
+interface UserApiResponse {
+  id?: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  address?: string | null;
+  role: 'CUSTOMER' | 'EMPLOYEE';
+  points?: number;
+  createdDate?: number;
+}
 
 // Interface cho khách hàng dựa trên database schema
 interface Customer {
@@ -23,6 +34,7 @@ interface Customer {
   address: string;
   role: 'CUSTOMER';
   created_at: string;
+  points: number;
   total_orders?: number;
   total_spent?: number;
 }
@@ -55,7 +67,7 @@ export default function CustomerTable() {
       {
         property: 'fullName',
         propertyType: 'string' as const,
-        operator: 'CONTAINS' as const,
+        operator: 'EQUAL' as const,
         value: debouncedSearchTerm
       }
     ] : []
@@ -65,14 +77,15 @@ export default function CustomerTable() {
   const deleteUserMutation = useDeleteUser();
 
   // Convert API data to Customer format
-  const customers: Customer[] = customersData?.data?.content?.map((user: User) => ({
+  const customers: Customer[] = customersData?.data?.content?.map((user: UserApiResponse) => ({
     user_id: user.id || 0,
     full_name: user.fullName,
     email: user.email,
     phone: user.phone,
     address: user.address || '',
     role: 'CUSTOMER' as const,
-    created_at: new Date().toISOString(), // API không trả về created_at, sử dụng thời gian hiện tại
+    created_at: user.createdDate ? new Date(user.createdDate).toISOString() : new Date().toISOString(),
+    points: user.points || 0,
     total_orders: Math.floor(Math.random() * 30) + 1, // Mock data cho demo
     total_spent: Math.floor(Math.random() * 5000000) + 100000 // Mock data cho demo
   })) || [];
@@ -231,6 +244,12 @@ export default function CustomerTable() {
                 isHeader
                 className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
               >
+                Điểm tích lũy
+              </TableCell>
+              <TableCell
+                isHeader
+                className="px-5 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400"
+              >
                 Loại khách
               </TableCell>
               <TableCell
@@ -291,6 +310,11 @@ export default function CustomerTable() {
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                     <span className="font-medium text-gray-800 dark:text-white/90">
                       {formatCurrency(customer.total_spent || 0)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                    <span className="font-medium text-gray-800 dark:text-white/90">
+                      {customer.points.toLocaleString('vi-VN')} điểm
                     </span>
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">

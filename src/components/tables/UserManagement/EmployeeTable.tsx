@@ -47,13 +47,13 @@ export default function EmployeeTable() {
       {
         property: 'fullName',
         propertyType: 'string' as const,
-        operator: 'CONTAINS' as const,
+        operator: 'EQUAL' as const,
         value: debouncedSearchTerm
       }
     ] : []
   };
 
-  const { data: employeesData, isLoading, error, refetch } = useUsersByRole('STAFF', searchRequest);
+  const { data: employeesData, isLoading, error, refetch } = useUsersByRole('EMPLOYEE', searchRequest);
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();

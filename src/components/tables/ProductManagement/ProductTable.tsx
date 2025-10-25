@@ -52,7 +52,7 @@ export default function ProductTable() {
       {
         property: 'name',
         propertyType: 'string' as const,
-        operator: 'CONTAINS' as const,
+        operator: 'EQUAL' as const,
         value: debouncedSearchTerm
       }
     ] : []

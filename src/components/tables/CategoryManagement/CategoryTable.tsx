@@ -7,6 +7,7 @@ import {
   TableRow,
 } from "../../ui/table";
 import Badge from "../../ui/badge/Badge";
+import Pagination from "../../common/Pagination";
 import CategoryFormPopup from "./CategoryFormPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
 import { Category, CategoryFormData, CategoryWithUI } from "./types";
@@ -28,6 +29,10 @@ export default function CategoryTable() {
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // React Query hooks
   const { data: categoryTreeData, isLoading, error, refetch } = useCategoryTree();
@@ -40,15 +45,15 @@ export default function CategoryTable() {
     if (!categoryTreeData) return [];
     
     const convertCategory = (cat: APICategory, level: number = 0): CategoryWithUI => ({
-      categoryId: cat.categoryId,
+      id: cat.id,
       name: cat.name,
       description: cat.description,
       parentId: cat.parentId,
       parentName: cat.parentName,
       children: cat.children?.map(child => convertCategory(child, level + 1)),
       level,
-      isExpanded: expandedCategories.has(cat.categoryId),
-      isSelected: selectedParentId === cat.categoryId
+      isExpanded: expandedCategories.has(cat.id),
+      isSelected: selectedParentId === cat.id
     });
 
     return categoryTreeData.map(cat => convertCategory(cat));
@@ -72,15 +77,46 @@ export default function CategoryTable() {
     return flatten(categoriesWithUI);
   }, [categoriesWithUI]);
 
-  // Filtered categories based on search
+  // Filtered categories based on search (only parent categories for pagination)
   const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) return flattenedCategories;
+    // Chỉ lấy parent categories (level 0) để phân trang
+    const parentCategories = flattenedCategories.filter(category => category.level === 0);
     
-    return flattenedCategories.filter(category =>
+    if (!searchTerm.trim()) return parentCategories;
+    
+    return parentCategories.filter(category =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       category.description.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [flattenedCategories, searchTerm]);
+
+  // Pagination calculations
+  const totalItems = filteredCategories.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // Paginated categories (chỉ parent categories được phân trang)
+  const paginatedParentCategories = useMemo(() => {
+    return filteredCategories.slice(startIndex, endIndex);
+  }, [filteredCategories, startIndex, endIndex]);
+
+  // Categories to display (bao gồm cả children của các parent được phân trang)
+  const paginatedCategories = useMemo(() => {
+    const result: CategoryWithUI[] = [];
+    
+    paginatedParentCategories.forEach(parentCategory => {
+      // Thêm parent category
+      result.push(parentCategory);
+      
+      // Thêm children nếu parent được expand
+      if (parentCategory.isExpanded && parentCategory.children) {
+        result.push(...parentCategory.children);
+      }
+    });
+    
+    return result;
+  }, [paginatedParentCategories]);
 
 
   // Handle expand/collapse category
@@ -123,15 +159,15 @@ export default function CategoryTable() {
   const handleFormSubmit = async (categoryData: CategoryFormData) => {
     try {
       if (formMode === 'add') {
-        const apiCategoryData: Omit<APICategory, 'categoryId'> = {
+        const apiCategoryData: Omit<APICategory, 'id'> = {
           name: categoryData.name,
           description: categoryData.description,
           parentId: selectedParentId || undefined
         };
         await createCategoryMutation.mutateAsync(apiCategoryData);
       } else if (selectedCategory) {
-        const apiCategoryData: Partial<APICategory> & { categoryId: number } = {
-          categoryId: selectedCategory.categoryId,
+        const apiCategoryData: Partial<APICategory> & { id: number } = {
+          id: selectedCategory.id,
           name: categoryData.name,
           description: categoryData.description,
           parentId: categoryData.parentId
@@ -160,7 +196,7 @@ export default function CategoryTable() {
   const handleConfirmDelete = async () => {
     if (confirmAction) {
       try {
-        await deleteCategoryMutation.mutateAsync(confirmAction.category.categoryId);
+        await deleteCategoryMutation.mutateAsync(confirmAction.category.id);
         
         // Refetch category tree data sau khi xóa thành công
         await refetch();
@@ -174,6 +210,17 @@ export default function CategoryTable() {
   // Search handler
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   // Loading state
@@ -236,7 +283,19 @@ export default function CategoryTable() {
       {/* Search Results Info */}
       {searchTerm && (
         <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Tìm thấy {filteredCategories.length} danh mục cho từ khóa "{searchTerm}"
+          Tìm thấy {totalItems} danh mục gốc cho từ khóa "{searchTerm}"
+          {totalPages > 1 && (
+            <span className="ml-2">
+              (Trang {currentPage}/{totalPages})
+            </span>
+          )}
+        </div>
+      )}
+      
+      {/* Pagination Info */}
+      {!searchTerm && totalPages > 1 && (
+        <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          Hiển thị {totalItems} danh mục gốc (Trang {currentPage}/{totalPages})
         </div>
       )}
 
@@ -281,12 +340,12 @@ export default function CategoryTable() {
 
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {filteredCategories.length > 0 ? (
-                filteredCategories.map((category) => (
-                  <TableRow key={category.categoryId} className={category.level && category.level > 0 ? 'bg-gray-50 dark:bg-gray-800/30' : ''}>
+              {paginatedCategories.length > 0 ? (
+                paginatedCategories.map((category) => (
+                  <TableRow key={category.id} className={category.level && category.level > 0 ? 'bg-gray-50 dark:bg-gray-800/30' : ''}>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <span className="font-medium text-gray-800 text-theme-sm dark:text-white/90">
-                        #{category.categoryId}
+                        #{category.id}
                       </span>
                     </TableCell>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
@@ -301,7 +360,7 @@ export default function CategoryTable() {
                         {/* Expand/Collapse button cho parent categories */}
                         {category.children && category.children.length > 0 && (
                           <button
-                            onClick={() => handleToggleExpand(category.categoryId)}
+                            onClick={() => handleToggleExpand(category.id)}
                             className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           >
                             <svg 
@@ -354,7 +413,7 @@ export default function CategoryTable() {
                         {/* Add child button cho parent categories */}
                         {category.level === 0 && (
                           <button 
-                            onClick={() => handleAddChildCategory(category.categoryId)}
+                            onClick={() => handleAddChildCategory(category.id)}
                             className="text-green-500 hover:text-green-600 transition-colors"
                             title="Thêm danh mục con"
                           >
@@ -401,6 +460,19 @@ export default function CategoryTable() {
             </TableBody>
           </Table>
         </div>
+        
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            showItemsPerPage={true}
+          />
+        )}
       </div>
 
       {/* Category Form Popup */}

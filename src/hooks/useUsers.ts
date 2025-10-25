@@ -100,7 +100,7 @@ export const useDeleteUser = () => {
 };
 
 // Hook để lấy users theo role (employees hoặc customers) - luôn fetch data mới nhất
-export const useUsersByRole = (role: 'ADMIN' | 'STAFF' | 'CUSTOMER', searchRequest: SearchRequest) => {
+export const useUsersByRole = (role: 'ADMIN' | 'EMPLOYEE' | 'CUSTOMER', searchRequest: SearchRequest) => {
   return useQuery({
     queryKey: [...userKeys.list(searchRequest), 'role', role],
     queryFn: async () => {
