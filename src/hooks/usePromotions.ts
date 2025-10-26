@@ -51,14 +51,13 @@ export const useUpdatePromotion = () => {
   });
 };
 
-// Hook để xóa promotion (nếu có API delete)
+// Hook để xóa promotion
 export const useDeletePromotion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (_id: number) => {
-      // TODO: Implement delete API when available
-      throw new Error('Delete API not implemented yet');
+    mutationFn: (id: number) => {
+      return promotionService.delete(id);
     },
     onSuccess: () => {
       // Invalidate và refetch promotion lists

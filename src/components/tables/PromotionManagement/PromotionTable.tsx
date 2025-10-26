@@ -11,7 +11,7 @@ import PromotionFormPopup from "./PromotionFormPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
 import Pagination from "../../common/Pagination";
 import { Promotion, PromotionFormData } from "./types";
-import { usePromotions, useCreatePromotion, useUpdatePromotion } from '../../../hooks/usePromotions';
+import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromotion } from '../../../hooks/usePromotions';
 import { Promotion as APIPromotion } from '../../../services/promotionService';
 import { showToast } from '../../../utils/toast';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -49,7 +49,7 @@ export default function PromotionTable() {
       {
         property: 'code',
         propertyType: 'string' as const,
-        operator: 'LIKE' as const,
+        operator: 'CONTAINS' as const,
         value: debouncedSearchTerm
       }
     ] : []
@@ -58,6 +58,7 @@ export default function PromotionTable() {
   const { data: promotionsData, isLoading, error, refetch } = usePromotions(searchRequest);
   const createPromotionMutation = useCreatePromotion();
   const updatePromotionMutation = useUpdatePromotion();
+  const deletePromotionMutation = useDeletePromotion();
 
   // Convert API data to Promotion format
   const promotions: Promotion[] = useMemo(() => {
@@ -165,12 +166,21 @@ export default function PromotionTable() {
     setIsConfirmPopupOpen(true);
   };
 
-  // Handle confirm delete (tạm thời disable vì API không hỗ trợ)
-  const handleConfirmDelete = () => {
-    // TODO: Implement delete API when available
-    console.log('Delete functionality not implemented yet');
-    showToast.error('Chức năng xóa chưa được triển khai!');
-    setIsConfirmPopupOpen(false);
+  // Handle confirm delete
+  const handleConfirmDelete = async () => {
+    if (confirmAction?.promotion) {
+      try {
+        await deletePromotionMutation.mutateAsync(confirmAction.promotion.promo_id);
+        showToast.success('Xóa mã giảm giá thành công!');
+        setIsConfirmPopupOpen(false);
+        // Refetch promotions data sau khi xóa thành công
+        await refetch();
+      } catch (error) {
+        console.error('Error deleting promotion:', error);
+        showToast.error('Có lỗi xảy ra khi xóa mã giảm giá!');
+        setIsConfirmPopupOpen(false);
+      }
+    }
   };
 
   // Search handler
