@@ -181,7 +181,7 @@ export default function UserDropdown() {
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
+        <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[200]">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">

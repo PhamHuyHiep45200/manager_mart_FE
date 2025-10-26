@@ -67,7 +67,9 @@ export type {
   Category 
 } from './categoryService';
 export type { 
-  Product 
+  Product,
+  GetAllResponse,
+  SearchResponse
 } from './productService';
 export type { 
   Invoice, 

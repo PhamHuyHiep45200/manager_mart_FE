@@ -74,7 +74,6 @@ export default function UploadDemoPage() {
             onUploadError={handleUploadError}
             maxFileSize={10}
             acceptedTypes={selectedCategory === 'images' ? 'image/*' : '*/*'}
-            multiple={true}
           />
         </div>
 

@@ -69,14 +69,15 @@ export default function ProductTable() {
     
     return productsData.data.content.map((product: APIProduct) => ({
       product_id: product.id || 0,
-      category_id: product.categoryId,
+      parent_category_id: product.categoryParentId || null,
+      category_id: product.categoryId ? Number(product.categoryId) : 0,
       name: product.name,
       description: product.description,
       price: product.price,
       stock: product.stock,
-      image_url: product.imageUrl,
+      image_url: product.imageUrl || null,
       created_at: product.createdAt || new Date().toISOString(),
-      category_name: 'Unknown' // Sẽ được cập nhật từ API response nếu có
+      category_name: product.categoryName || 'Unknown'
     }));
   }, [productsData]);
 
@@ -131,10 +132,10 @@ export default function ProductTable() {
     try {
       if (formMode === 'add') {
         const apiProductData: APIProduct = {
-          categoryId: productData.category_id,
+          categoryId: +productData.category_id,
           name: productData.name,
           description: productData.description,
-          price: productData.price,
+          price: +productData.price,
           stock: productData.stock,
           imageUrl: productData.image_url
         };
@@ -142,10 +143,10 @@ export default function ProductTable() {
       } else if (selectedProduct) {
         const apiProductData: Partial<APIProduct> & { id: number } = {
           id: selectedProduct.product_id,
-          categoryId: productData.category_id,
+          categoryId: +productData.category_id,
           name: productData.name,
           description: productData.description,
-          price: productData.price,
+          price: +productData.price,
           stock: productData.stock,
           imageUrl: productData.image_url
         };

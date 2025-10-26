@@ -6,20 +6,20 @@ export interface UploadRequest {
   category: 'images' | 'documents' | 'videos' | 'other';
 }
 
-// Interface cho Upload Response
+// Interface cho Upload Response theo API format
 export interface UploadResponse {
-  success: boolean;
+  code: string;
+  message: string | null;
   data: {
-    id: string;
-    filename: string;
-    originalName: string;
-    mimeType: string;
-    size: number;
+    fileName: string;
+    originalFileName: string;
+    filePath: string;
+    fileUrl: string;
     category: string;
-    url: string;
-    uploadedAt: string;
+    fileSize: number;
+    contentType: string;
+    uploadedAt: number[];
   };
-  message?: string;
 }
 
 // Interface cho File Info

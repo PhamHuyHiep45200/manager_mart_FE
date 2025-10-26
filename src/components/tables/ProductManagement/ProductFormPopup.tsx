@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { ProductFormData } from "./types";
+import { ProductFormData, Product } from "./types";
 import { Category } from "../../../services/categoryService";
 import {
   useRootCategories,
@@ -13,7 +13,7 @@ interface ProductFormPopupProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (product: ProductFormData) => void;
-  product?: ProductFormData | null;
+  product?: Product | null;
   mode: "add" | "edit";
 }
 
@@ -30,7 +30,6 @@ export default function ProductFormPopup({
   
   // State để quản lý uploaded image
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
-  const [isImageUploaded, setIsImageUploaded] = useState<boolean>(false);
 
   // Hooks để lấy dữ liệu categories
   const { data: rootCategories = [], isLoading: isLoadingRoots } =
@@ -60,17 +59,30 @@ export default function ProductFormPopup({
   // Watch parent category để trigger fetch children
   const watchedParentId = watch("parent_category_id");
 
+  // Track previous parent ID để phát hiện khi user thay đổi
+  const prevParentIdRef = useRef<number | null>(null);
+  
   // Effect để cập nhật child categories khi parent category thay đổi
   useEffect(() => {
+    const isParentChanged = prevParentIdRef.current !== watchedParentId && prevParentIdRef.current !== null;
+    
     if (watchedParentId) {
       setSelectedParentId(watchedParentId);
-      // Reset child category khi parent thay đổi
-      setValue("category_id", 0);
+      // Chỉ reset child category khi user thay đổi parent (không phải lần đầu load)
+      if (isParentChanged) {
+        setValue("category_id", 0);
+      }
     } else {
       setSelectedParentId(null);
       setChildCategories([]);
-      setValue("category_id", 0);
+      // Chỉ reset category_id khi user thay đổi parent
+      if (isParentChanged) {
+        setValue("category_id", 0);
+      }
     }
+    
+    // Update prev parent ID
+    prevParentIdRef.current = watchedParentId || null;
   }, [watchedParentId, setValue]);
 
   // Effect để cập nhật child categories từ API
@@ -90,9 +102,10 @@ export default function ProductFormPopup({
   useEffect(() => {
     if (isOpen) {
       if (mode === "edit" && product) {
+        const parentId = product.parent_category_id || 0;
         reset({
           product_id: product.product_id,
-          parent_category_id: product.parent_category_id || 0,
+          parent_category_id: parentId,
           category_id: product.category_id,
           name: product.name,
           description: product.description,
@@ -100,13 +113,15 @@ export default function ProductFormPopup({
           stock: product.stock,
           image_url: product.image_url || "",
         });
+        // Set parent ID để trigger fetch children
+        setSelectedParentId(parentId > 0 ? parentId : null);
+        // Set prev parent ID để tránh reset category_id khi load form
+        prevParentIdRef.current = parentId > 0 ? parentId : null;
         // Set uploaded image state nếu có image_url
         if (product.image_url) {
           setUploadedImageUrl(product.image_url);
-          setIsImageUploaded(true);
         } else {
           setUploadedImageUrl("");
-          setIsImageUploaded(false);
         }
       } else {
         reset({
@@ -118,20 +133,20 @@ export default function ProductFormPopup({
           stock: 0,
           image_url: "",
         });
+        // Reset parent ID
+        setSelectedParentId(null);
+        // Reset prev parent ID
+        prevParentIdRef.current = null;
         // Reset uploaded image state
         setUploadedImageUrl("");
-        setIsImageUploaded(false);
       }
     }
   }, [isOpen, product, mode, reset]);
 
   // Validation rules
   const validationRules = {
-    parent_category_id: {
-      required: "Danh mục cha không được để trống",
-    },
     category_id: {
-      required: "Danh mục con không được để trống",
+      required: "Danh mục sản phẩm không được để trống",
     },
     name: {
       required: "Tên sản phẩm không được để trống",
@@ -166,7 +181,7 @@ export default function ProductFormPopup({
       },
     },
     image_url: {
-      validate: (value: string | undefined) => {
+      validate: (value: string | undefined | null) => {
         // Cho phép empty string hoặc URL hợp lệ
         if (!value || value === "") return true;
         const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i;
@@ -183,7 +198,6 @@ export default function ProductFormPopup({
   // Handler cho upload image success
   const handleImageUploadSuccess = (fileInfo: FileInfo) => {
     setUploadedImageUrl(fileInfo.url);
-    setIsImageUploaded(true);
     setValue("image_url", fileInfo.url);
   };
 
@@ -191,21 +205,13 @@ export default function ProductFormPopup({
   const handleImageUploadError = (error: string) => {
     console.error("Upload image error:", error);
     setUploadedImageUrl("");
-    setIsImageUploaded(false);
-    setValue("image_url", "");
-  };
-
-  // Handler để xóa uploaded image
-  const handleRemoveImage = () => {
-    setUploadedImageUrl("");
-    setIsImageUploaded(false);
     setValue("image_url", "");
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
+    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[200]">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -264,26 +270,22 @@ export default function ProductFormPopup({
               )}
             </div>
 
-            {/* Parent Category */}
+            {/* Parent Category - Optional */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Danh mục cha <span className="text-red-500">*</span>
+                Danh mục cha (nếu có)
               </label>
               <Controller
                 name="parent_category_id"
                 control={control}
-                rules={validationRules.parent_category_id}
                 render={({ field }) => (
                   <select
                     {...field}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 ${
-                      errors.parent_category_id
-                        ? "border-red-500 dark:border-red-400"
-                        : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                    }`}
+                    value={field.value || 0}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-gray-700 dark:text-white"
                     disabled={isLoadingRoots}
                   >
-                    <option value={0}>Chọn danh mục cha</option>
+                    <option value={0}>Không có danh mục cha</option>
                     {rootCategories.map((category) => (
                       <option
                         key={category.id}
@@ -295,11 +297,6 @@ export default function ProductFormPopup({
                   </select>
                 )}
               />
-              {errors.parent_category_id && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.parent_category_id.message}
-                </p>
-              )}
               {isLoadingRoots && (
                 <p className="mt-1 text-sm text-gray-500">
                   Đang tải danh mục...
@@ -307,10 +304,10 @@ export default function ProductFormPopup({
               )}
             </div>
 
-            {/* Child Category */}
+            {/* Category - Shows as child or root based on parent selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Danh mục con <span className="text-red-500">*</span>
+                {selectedParentId ? 'Danh mục con' : 'Danh mục gốc'} <span className="text-red-500">*</span>
               </label>
               <Controller
                 name="category_id"
@@ -324,17 +321,28 @@ export default function ProductFormPopup({
                         ? "border-red-500 dark:border-red-400"
                         : "border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     }`}
-                    disabled={!selectedParentId || isLoadingChildren}
+                    disabled={!!selectedParentId && (isLoadingChildren || childCategories.length === 0)}
                   >
-                    <option value={0}>Chọn danh mục con</option>
-                    {childCategories.map((category) => (
-                      <option
-                        key={category.id}
-                        value={category.id}
-                      >
-                        {category.name}
-                      </option>
-                    ))}
+                    <option value={0}>Chọn danh mục</option>
+                    {selectedParentId ? (
+                      childCategories.map((category) => (
+                        <option
+                          key={category.id}
+                          value={category.id}
+                        >
+                          {category.name}
+                        </option>
+                      ))
+                    ) : (
+                      rootCategories.map((category) => (
+                        <option
+                          key={category.id}
+                          value={category.id}
+                        >
+                          {category.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                 )}
               />
@@ -348,9 +356,9 @@ export default function ProductFormPopup({
                   Đang tải danh mục con...
                 </p>
               )}
-              {!selectedParentId && (
+              {selectedParentId && childCategories.length === 0 && !isLoadingChildren && (
                 <p className="mt-1 text-sm text-gray-500">
-                  Vui lòng chọn danh mục cha trước
+                  Không có danh mục con
                 </p>
               )}
             </div>
@@ -417,35 +425,7 @@ export default function ProductFormPopup({
 
             {/* Image Upload */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Hình ảnh sản phẩm
-              </label>
-              
-              {/* Hiển thị hình ảnh đã upload */}
-              {isImageUploaded && uploadedImageUrl && (
-                <div className="mb-4">
-                  <div className="relative inline-block">
-                    <img
-                      src={uploadedImageUrl}
-                      alt="Product preview"
-                      className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                    ✓ Hình ảnh đã được upload thành công
-                  </p>
-                </div>
-              )}
-              
+
               {/* Upload Component */}
               <UploadComponent
                 category="images"
@@ -453,7 +433,7 @@ export default function ProductFormPopup({
                 onUploadError={handleImageUploadError}
                 maxFileSize={5} // 5MB cho hình ảnh sản phẩm
                 acceptedTypes="image/*"
-                multiple={false}
+                existingImageUrl={mode === 'edit' && uploadedImageUrl ? uploadedImageUrl : undefined}
               />
               
               {/* Hidden input để lưu URL vào form */}

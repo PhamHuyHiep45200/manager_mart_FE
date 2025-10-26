@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import { PromotionFormData } from './types';
+import PromotionProductSelector from './PromotionProductSelector';
 
 interface PromotionFormPopupProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function PromotionFormPopup({
   const endDateRef = useRef<HTMLInputElement>(null);
   const startDatePickerRef = useRef<flatpickr.Instance | null>(null);
   const endDatePickerRef = useRef<flatpickr.Instance | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   const {
     control,
@@ -37,7 +39,8 @@ export default function PromotionFormPopup({
       discount_percent: 0,
       start_date: '',
       end_date: '',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      selected_product_id: null
     },
     mode: 'onChange'
   });
@@ -95,22 +98,27 @@ export default function PromotionFormPopup({
   useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && promotion) {
+        const productId = promotion.selected_product_id || null;
         reset({
           promo_id: promotion.promo_id,
           code: promotion.code,
           discount_percent: promotion.discount_percent,
           start_date: promotion.start_date,
           end_date: promotion.end_date,
-          status: promotion.status
+          status: promotion.status,
+          selected_product_id: productId
         });
+        setSelectedProductId(productId);
       } else {
         reset({
           code: '',
           discount_percent: 0,
           start_date: '',
           end_date: '',
-          status: 'ACTIVE'
+          status: 'ACTIVE',
+          selected_product_id: null
         });
+        setSelectedProductId(null);
       }
     }
   }, [isOpen, promotion, mode, reset]);
@@ -157,15 +165,27 @@ export default function PromotionFormPopup({
     }
   };
 
+  // Handler khi selection thay đổi từ component con
+  const handleSelectionChange = (productId: number | null) => {
+    setSelectedProductId(productId);
+    setValue('selected_product_id', productId);
+  };
+
   const onFormSubmit = (data: PromotionFormData) => {
-    onSubmit(data);
-    onClose();
+    // Thêm selected_product_id vào data
+    const submitData = {
+      ...data,
+      selected_product_id: selectedProductId
+    };
+    onSubmit(submitData);
+    // Popup sẽ được đóng trong handleFormSubmit sau khi mutation hoàn thành
+    // onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[99999]">
+    <div className="fixed inset-0 bg-gray-400/50 flex items-center justify-center z-[200]">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -312,6 +332,12 @@ export default function PromotionFormPopup({
               <p className="mt-1 text-sm text-red-500">{errors.end_date.message}</p>
             )}
           </div>
+
+          {/* Products Selection */}
+          <PromotionProductSelector
+            selectedProductId={selectedProductId}
+            onSelectionChange={handleSelectionChange}
+          />
 
           {/* Status */}
           <div>

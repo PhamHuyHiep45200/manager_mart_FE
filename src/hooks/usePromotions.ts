@@ -34,14 +34,13 @@ export const useCreatePromotion = () => {
   });
 };
 
-// Hook để cập nhật promotion (nếu có API update)
+// Hook để cập nhật promotion
 export const useUpdatePromotion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (promotionData: Partial<Promotion> & { id: number }) => {
-      // TODO: Implement update API when available
-      throw new Error('Update API not implemented yet');
+      return promotionService.update(promotionData);
     },
     onSuccess: (_, variables) => {
       // Invalidate và refetch promotion lists
@@ -57,7 +56,7 @@ export const useDeletePromotion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       // TODO: Implement delete API when available
       throw new Error('Delete API not implemented yet');
     },

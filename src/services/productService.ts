@@ -4,15 +4,18 @@ import apiClient from './index';
 export interface Product {
   pageNumber?: number | null;
   pageSize?: number | null;
-  sortFields?: any | null;
+  sortFields?: string | null;
   id?: number;
-  categoryId: number;
+  productId?: number | null; // For getAll API response
+  categoryId?: number | null;
+  categoryParentId?: number | null; // ID của parent category
+  categoryName?: string | null;
   name: string;
   description: string;
   price: number;
   stock: number;
-  imageUrl?: string;
-  createdAt?: string;
+  imageUrl?: string | null;
+  createdAt?: string | null;
   updatedAt?: string;
 }
 
@@ -73,16 +76,18 @@ export interface SearchResponse<T> {
   };
 }
 
+// Định nghĩa interface cho GetAll Response (return array trực tiếp)
+export interface GetAllResponse<T> {
+  code: string;
+  message: string | null;
+  data: T[];
+}
+
 // Product Service
 export const productService = {
-  // Lấy tất cả products với phân trang
-  getAll: async (pagination?: PaginationRequest): Promise<SearchResponse<Product>> => {
-    const params = pagination ? {
-      page: pagination.page,
-      size: pagination.size,
-      sort: pagination.sort || 'name,asc'
-    } : {};
-    return apiClient.get('/api/products', { params });
+  // Lấy tất cả products (trả về array trực tiếp)
+  getAll: async (): Promise<GetAllResponse<Product>> => {
+    return apiClient.get('/api/products/all');
   },
 
   // Tìm kiếm products với filters và sorts
@@ -97,12 +102,12 @@ export const productService = {
 
   // Tạo product mới
   create: async (productData: Product): Promise<Product> => {
-    return apiClient.post('/api/products', productData);
+    return apiClient.post('/api/products/create', productData);
   },
 
   // Cập nhật product
   update: async (id: number, productData: Partial<Product>): Promise<Product> => {
-    return apiClient.put(`/api/products/${id}`, productData);
+    return apiClient.put(`/api/products/update`, productData);
   },
 
   // Xóa product theo ID

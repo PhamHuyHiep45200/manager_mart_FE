@@ -2,6 +2,8 @@ import apiClient from './index';
 
 // Định nghĩa interface cho Promotion
 export interface Promotion {
+  productIds?: number[];
+  productId?: number; // Single product ID (for radio selection)
   pageNumber?: number | null;
   pageSize?: number | null;
   sortFields?: any | null;

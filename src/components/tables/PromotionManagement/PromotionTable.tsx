@@ -11,7 +11,7 @@ import PromotionFormPopup from "./PromotionFormPopup";
 import ConfirmPopup from "../UserManagement/ConfirmPopup";
 import Pagination from "../../common/Pagination";
 import { Promotion, PromotionFormData } from "./types";
-import { usePromotions, useCreatePromotion } from '../../../hooks/usePromotions';
+import { usePromotions, useCreatePromotion, useUpdatePromotion } from '../../../hooks/usePromotions';
 import { Promotion as APIPromotion } from '../../../services/promotionService';
 import { showToast } from '../../../utils/toast';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -41,7 +41,7 @@ export default function PromotionTable() {
     size: itemsPerPage,
     sortField: [
       {
-        fieldName: 'startDate',
+        fieldName: 'createdDate',
         sort: 'DESC' as const
       }
     ],
@@ -57,6 +57,7 @@ export default function PromotionTable() {
 
   const { data: promotionsData, isLoading, error, refetch } = usePromotions(searchRequest);
   const createPromotionMutation = useCreatePromotion();
+  const updatePromotionMutation = useUpdatePromotion();
 
   // Convert API data to Promotion format
   const promotions: Promotion[] = useMemo(() => {
@@ -69,6 +70,7 @@ export default function PromotionTable() {
       start_date: promo.startDate,
       end_date: promo.endDate,
       status: promo.status as 'ACTIVE' | 'INACTIVE' | 'EXPIRED',
+      selected_product_id: promo.productId || null, // Map selected product ID
       created_at: new Date().toISOString(), // API không trả về created_at
     }));
   }, [promotionsData]);
@@ -116,21 +118,37 @@ export default function PromotionTable() {
       if (formMode === 'add') {
         const apiPromotionData: APIPromotion = {
           code: promotionData.code,
-          discountPercent: promotionData.discount_percent,
+          discountPercent: +promotionData.discount_percent,
           startDate: promotionData.start_date,
           endDate: promotionData.end_date,
-          status: promotionData.status
+          status: promotionData.status,
+          productId: promotionData.selected_product_id || undefined
         };
+        
         await createPromotionMutation.mutateAsync(apiPromotionData);
         
         // Refetch promotions data sau khi tạo thành công
         await refetch();
         showToast.success('Thêm mã giảm giá thành công!');
-      } else {
-        // TODO: Implement update when API is available
-        console.log('Update functionality not implemented yet');
-        showToast.error('Chức năng cập nhật chưa được triển khai!');
+      } else if (formMode === 'edit' && selectedPromotion) {
+        const apiPromotionData: Partial<APIPromotion> & { id: number } = {
+          id: selectedPromotion.promo_id,
+          code: promotionData.code,
+          discountPercent: +promotionData.discount_percent,
+          startDate: promotionData.start_date,
+          endDate: promotionData.end_date,
+          status: promotionData.status,
+          productId: promotionData.selected_product_id || undefined
+        };
+        
+        await updatePromotionMutation.mutateAsync(apiPromotionData);
+        
+        // Refetch promotions data sau khi cập nhật thành công
+        await refetch();
+        showToast.success('Cập nhật mã giảm giá thành công!');
       }
+      
+      // Đóng popup sau khi submit thành công
       setIsFormPopupOpen(false);
     } catch (error) {
       console.error('Error saving promotion:', error);

@@ -6,6 +6,7 @@ export interface Promotion {
   start_date: string;
   end_date: string;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  selected_product_id?: number | null; // ID sản phẩm đã chọn (single)
   created_at?: string;
   updated_at?: string;
 }
@@ -18,6 +19,7 @@ export interface PromotionFormData {
   start_date: string;
   end_date: string;
   status: 'ACTIVE' | 'INACTIVE' | 'EXPIRED';
+  selected_product_id?: number | null; // ID sản phẩm đã chọn (single)
   created_at?: string;
   updated_at?: string;
 }

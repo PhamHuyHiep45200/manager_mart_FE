@@ -9,6 +9,7 @@ interface UploadComponentProps {
   maxFileSize?: number; // in MB
   acceptedTypes?: string; // e.g., "image/*,.pdf,.doc"
   showPreview?: boolean; // Hiển thị preview ảnh và URL
+  existingImageUrl?: string; // URL ảnh hiện có (để edit)
 }
 
 export default function UploadComponent({
@@ -18,14 +19,22 @@ export default function UploadComponent({
   maxFileSize = 10, // 10MB default
   acceptedTypes = 'image/*',
   showPreview = true,
+  existingImageUrl,
 }: UploadComponentProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadedUrl, setUploadedUrl] = useState<string>('');
+  const [uploadedUrl, setUploadedUrl] = useState<string>(existingImageUrl || '');
   const [dragActive, setDragActive] = useState(false);
   
   const uploadMutation = useUploadFile();
   const { uploadProgress, isUploading, uploadError, resetUploadState } = useUploadState();
+
+  // Cập nhật URL khi existingImageUrl thay đổi
+  React.useEffect(() => {
+    if (existingImageUrl) {
+      setUploadedUrl(existingImageUrl);
+    }
+  }, [existingImageUrl]);
 
   // Handle file selection
   const handleFileSelect = (files: FileList | null) => {
@@ -90,16 +99,26 @@ export default function UploadComponent({
         category,
       });
 
-      if (result.success) {
+      if (result.code === '00') {
         showToast.success(`Upload thành công: ${selectedFile.name}`);
         
         // Lấy URL từ response
-        const fileUrl = result.data?.url;
+        const fileUrl = result.data?.fileUrl;
         if (fileUrl) {
           setUploadedUrl(fileUrl);
         }
         
-        onUploadSuccess?.(result.data);
+        // Gọi callback với thông tin file đã upload
+        onUploadSuccess?.({
+          id: result.data.fileName,
+          filename: result.data.fileName,
+          originalName: result.data.originalFileName,
+          mimeType: result.data.contentType,
+          size: result.data.fileSize,
+          category: result.data.category,
+          url: fileUrl,
+          uploadedAt: new Date().toISOString(),
+        });
       } else {
         throw new Error(result.message || 'Upload thất bại');
       }
@@ -231,16 +250,16 @@ export default function UploadComponent({
                   readOnly
                   className="flex-1 px-2 py-1 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white"
                 />
-                <button
+                <div
                   onClick={() => {
                     navigator.clipboard.writeText(uploadedUrl);
                     showToast.success('Đã copy URL vào clipboard');
                   }}
-                  className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+                  className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors cursor-pointer"
                   title="Copy URL"
                 >
                   Copy
-                </button>
+                </div>
               </div>
             </div>
           </div>

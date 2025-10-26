@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productService, Product, SearchRequest } from '../services/productService';
+import { productService, Product, SearchRequest, GetAllResponse } from '../services/productService';
 
 // Query keys cho product API
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
   list: (filters: SearchRequest) => [...productKeys.lists(), filters] as const,
+  allList: () => [...productKeys.lists(), 'all'] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: number) => [...productKeys.details(), id] as const,
 };
@@ -16,6 +17,17 @@ export const useProducts = (searchRequest: SearchRequest) => {
     queryKey: productKeys.list(searchRequest),
     queryFn: () => productService.search(searchRequest),
     staleTime: 0, // Luôn fetch data mới nhất cho admin
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+};
+
+// Hook để lấy tất cả products với getAll
+export const useAllProducts = () => {
+  return useQuery<GetAllResponse<Product>>({
+    queryKey: productKeys.allList(),
+    queryFn: () => productService.getAll(),
+    staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
