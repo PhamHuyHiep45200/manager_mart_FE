@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useUsersByRole, useDeleteUser } from '../../../hooks/useUsers';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { showToast } from '../../../utils/toast';
+import { useAuthStore } from '../../../stores/authStore';
 
 // Interface cho API response từ backend
 interface UserApiResponse {
@@ -40,6 +41,10 @@ interface Customer {
 }
 
 export default function CustomerTable() {
+  // Get current user from auth store
+  const user = useAuthStore((state) => state.user);
+  const isAdmin = user?.role === 'ADMIN';
+
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -112,6 +117,10 @@ export default function CustomerTable() {
 
   // Handle delete customer
   const handleDeleteCustomer = (customer: Customer) => {
+    if (!isAdmin) {
+      showToast.error('Bạn không có quyền xóa khách hàng!');
+      return;
+    }
     setConfirmAction({
       type: 'delete',
       customer
@@ -329,28 +338,32 @@ export default function CustomerTable() {
                     {formatDate(customer.created_at)}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      {/* <button className="text-primary hover:text-primary/80 transition-colors" title="Xem chi tiết">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                      <button className="text-blue-500 hover:text-blue-600 transition-colors" title="Lịch sử mua hàng">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                      </button> */}
-                      <button 
-                        onClick={() => handleDeleteCustomer(customer)}
-                        className="text-red-500 hover:text-red-600 transition-colors" 
-                        title="Xóa khách hàng"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+                    {isAdmin ? (
+                      <div className="flex items-center gap-2">
+                        {/* <button className="text-primary hover:text-primary/80 transition-colors" title="Xem chi tiết">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <button className="text-blue-500 hover:text-blue-600 transition-colors" title="Lịch sử mua hàng">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </button> */}
+                        <button 
+                          onClick={() => handleDeleteCustomer(customer)}
+                          className="text-red-500 hover:text-red-600 transition-colors" 
+                          title="Xóa khách hàng"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">Không có quyền</span>
+                    )}
                   </TableCell>
                 </TableRow>
               );
