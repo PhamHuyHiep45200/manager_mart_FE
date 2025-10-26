@@ -49,7 +49,7 @@ export default function PromotionTable() {
       {
         property: 'code',
         propertyType: 'string' as const,
-        operator: 'EQUAL' as const,
+        operator: 'LIKE' as const,
         value: debouncedSearchTerm
       }
     ] : []

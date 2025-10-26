@@ -72,7 +72,7 @@ export default function CustomerTable() {
       {
         property: 'fullName',
         propertyType: 'string' as const,
-        operator: 'EQUAL' as const,
+        operator: 'LIKE' as const,
         value: debouncedSearchTerm
       }
     ] : []
