@@ -43,7 +43,7 @@ interface Customer {
 export default function CustomerTable() {
   // Get current user from auth store
   const user = useAuthStore((state) => state.user);
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = user?.data?.role === 'ADMIN';
 
   // State management
   const [currentPage, setCurrentPage] = useState(1);
